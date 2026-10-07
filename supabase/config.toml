@@ -1,0 +1,8 @@
+# Minimal Supabase CLI config for SkillGRID.
+# Run `supabase init` first if you want the full generated file;
+# these are the settings this project actually depends on.
+
+project_id = "skillgrid"
+
+[functions.generate-meeting-link]
+verify_jwt = true
