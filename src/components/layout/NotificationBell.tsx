@@ -1,16 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import NavItem from "./NavItem";
+import { NotificationsIcon } from "./icons";
+
+interface Props {
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}
 
 /**
- * Nav link to /notifications with an unread count. Polls on mount and
- * whenever the route changes (notifications use polling, not Realtime).
+ * Navigation row for /notifications with an unread count. Polls on mount and
+ * whenever the route changes (notifications are polled, not realtime).
  */
-export default function NotificationBell() {
+export default function NotificationBell({ collapsed = false, onNavigate }: Props) {
   const supabase = createClient();
   const { user, loading } = useAuth();
   const pathname = usePathname();
@@ -39,27 +45,25 @@ export default function NotificationBell() {
     return () => window.clearInterval(id);
   }, [user, refresh]);
 
-  const active = pathname === "/notifications";
+  const badge =
+    unread > 0 ? (
+      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-teal-700 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+        {unread > 99 ? "99+" : unread}
+      </span>
+    ) : null;
 
   return (
-    <Link
+    <NavItem
       href="/notifications"
-      aria-current={active ? "page" : undefined}
-      aria-label={
+      label="Notifications"
+      icon={NotificationsIcon}
+      active={pathname === "/notifications"}
+      collapsed={collapsed}
+      ariaLabel={
         unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
       }
-      className={`relative shrink-0 rounded-lg px-3 py-1.5 font-medium transition-colors ${
-        active
-          ? "bg-teal-50 text-teal-800"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-      }`}
-    >
-      Notifications
-      {unread > 0 && (
-        <span className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-teal-700 px-1.5 text-[11px] font-semibold tabular-nums text-white">
-          {unread > 99 ? "99+" : unread}
-        </span>
-      )}
-    </Link>
+      badge={badge}
+      onClick={onNavigate}
+    />
   );
 }
