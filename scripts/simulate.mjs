@@ -137,21 +137,21 @@ async function main() {
     check("GET / -> 200", home.status === 200, `got ${home.status}`);
 
     const login = await appGet("/login");
-    const loginToggles = (login.body.match(/aria-label="Show password"/g) ?? []).length;
-    check("login renders show-password toggle",
-      login.status === 200 && loginToggles === 1,
-      `status=${login.status} toggles=${loginToggles}`);
+    check("GET /login redirects to sign-in popup on home",
+      [302, 303, 307, 308].includes(login.status) &&
+        (login.location ?? "").includes("auth=login"),
+      `got ${login.status} -> ${login.location}`);
 
     const signup = await appGet("/signup");
-    const signupToggles = (signup.body.match(/aria-label="Show password"/g) ?? []).length;
-    check("signup renders show-password toggle on both fields",
-      signup.status === 200 && signupToggles === 2,
-      `status=${signup.status} toggles=${signupToggles}`);
+    check("GET /signup redirects to create-account popup on home",
+      [302, 303, 307, 308].includes(signup.status) &&
+        (signup.location ?? "").includes("auth=signup"),
+      `got ${signup.status} -> ${signup.location}`);
 
     const market = await appGet("/marketplace");
-    check("unauthenticated /marketplace redirects to login",
+    check("unauthenticated /marketplace redirects to home popup",
       [302, 303, 307, 308].includes(market.status) &&
-        (market.location ?? "").includes("/login"),
+        (market.location ?? "").includes("auth=login"),
       `got ${market.status} -> ${market.location}`);
   }
 

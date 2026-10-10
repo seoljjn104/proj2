@@ -35,5 +35,5 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=verification`);
+  return NextResponse.redirect(`${origin}/?auth=login&error=verification`);
 }

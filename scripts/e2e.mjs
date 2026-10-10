@@ -164,30 +164,45 @@ async function main() {
     const home = await appGet("/");
     check("GET / -> 200", home.status === 200, `got ${home.status}`);
     const login = await appGet("/login");
-    check("GET /login -> 200", login.status === 200, `got ${login.status}`);
+    check(
+      "GET /login redirects to the sign-in popup on home",
+      [302, 303, 307, 308].includes(login.status) &&
+        (login.location ?? "").includes("/") &&
+        (login.location ?? "").includes("auth=login"),
+      `got ${login.status} -> ${login.location}`,
+    );
     const signup = await appGet("/signup");
-    check("GET /signup -> 200", signup.status === 200, `got ${signup.status}`);
+    check(
+      "GET /signup redirects to the create-account popup on home",
+      [302, 303, 307, 308].includes(signup.status) &&
+        (signup.location ?? "").includes("/") &&
+        (signup.location ?? "").includes("auth=signup"),
+      `got ${signup.status} -> ${signup.location}`,
+    );
 
     const mp = await appGet("/marketplace");
     check(
-      "GET /marketplace redirects to /login",
+      "GET /marketplace redirects to home sign-in popup",
       [302, 303, 307, 308].includes(mp.status) &&
-        (mp.location ?? "").includes("/login"),
+        (mp.location ?? "").includes("/") &&
+        (mp.location ?? "").includes("auth=login"),
       `got ${mp.status} -> ${mp.location}`,
     );
     const admin = await appGet("/admin");
     check(
-      "GET /admin redirects to /login?next=/admin",
+      "GET /admin redirects to home popup with next=/admin",
       [302, 303, 307, 308].includes(admin.status) &&
-        (admin.location ?? "").includes("/login") &&
+        (admin.location ?? "").includes("auth=login") &&
+        (admin.location ?? "").includes("next") &&
         (admin.location ?? "").includes("admin"),
       `got ${admin.status} -> ${admin.location}`,
     );
     const prof = await appGet("/profile");
     check(
-      "GET /profile redirects to login",
+      "GET /profile redirects to home popup with next",
       [302, 303, 307, 308].includes(prof.status) &&
-        (prof.location ?? "").includes("/login"),
+        (prof.location ?? "").includes("auth=login") &&
+        (prof.location ?? "").includes("next"),
       `got ${prof.status} -> ${prof.location}`,
     );
   }

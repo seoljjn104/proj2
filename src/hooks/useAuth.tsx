@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     // Full reload so middleware re-evaluates with the cleared auth cookie.
-    window.location.assign("/login");
+    window.location.assign("/");
   }, [supabase]);
 
   const refreshProfile = useCallback(async () => {

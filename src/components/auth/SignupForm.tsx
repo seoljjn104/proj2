@@ -1,13 +1,18 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { allowedDomainsHint } from "@/lib/email-domains";
 import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 
-export default function SignupPage() {
+interface Props {
+  onSwitch?: () => void;
+  /** Closes the popup entirely (used from the verification-done state). */
+  onClose?: () => void;
+}
+
+export default function SignupForm({ onSwitch, onClose }: Props) {
   const { signUp } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,26 +47,31 @@ export default function SignupPage() {
 
   if (done) {
     return (
-      <div className="card w-full max-w-md text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
           Check your inbox
-        </h1>
+        </h2>
         <p className="mt-2 text-sm text-slate-600">
           We sent a verification link to <strong>{email}</strong>. Click it to
           activate your SkillGRID account, then sign in.
         </p>
-        <Link href="/login" className="btn-primary mt-6 inline-flex">
-          Go to sign in
-        </Link>
+        <div className="mt-6 flex gap-3">
+          <button type="button" onClick={onClose} className="btn-secondary flex-1">
+            Close
+          </button>
+          <button type="button" onClick={onSwitch} className="btn-primary flex-1">
+            Go to sign in
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div>
-      <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
+      <h2 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
         Create your account
-      </h1>
+      </h2>
       <p className="mt-1.5 text-sm text-slate-600">
         Offer what you know. Ask for what you want to learn.
       </p>
@@ -71,13 +81,14 @@ export default function SignupPage() {
         </p>
       )}
 
-      <form onSubmit={onSubmit} className="mt-7 space-y-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
           <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
             Full name
           </label>
           <input
             id="name"
+            data-autofocus
             type="text"
             required
             minLength={2}
@@ -140,9 +151,13 @@ export default function SignupPage() {
 
       <p className="mt-6 text-center text-sm text-slate-600">
         Already registered?{" "}
-        <Link href="/login" className="font-semibold text-teal-700 hover:text-teal-800 hover:underline">
+        <button
+          type="button"
+          onClick={onSwitch}
+          className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+        >
           Sign in
-        </Link>
+        </button>
       </p>
     </div>
   );

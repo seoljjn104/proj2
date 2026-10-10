@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 
-export default function LoginPage() {
+interface Props {
+  /** Where to send the user after signing in (fallback: /marketplace). */
+  next?: string;
+  onSwitch?: () => void;
+}
+
+export default function LoginForm({ next, onSwitch }: Props) {
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +28,6 @@ export default function LoginPage() {
       setBusy(false);
       return;
     }
-    const next = new URLSearchParams(window.location.search).get("next");
     const target =
       next && next.startsWith("/") && !next.startsWith("//")
         ? next
@@ -35,20 +39,21 @@ export default function LoginPage() {
 
   return (
     <div>
-      <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
+      <h2 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
         Welcome back
-      </h1>
+      </h2>
       <p className="mt-1.5 text-sm text-slate-600">
         Sign in to keep trading skills with your peers.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-7 space-y-4">
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
         <div>
           <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
             Institutional email
           </label>
           <input
             id="email"
+            data-autofocus
             type="email"
             required
             autoComplete="email"
@@ -81,9 +86,13 @@ export default function LoginPage() {
 
       <p className="mt-6 text-center text-sm text-slate-600">
         New here?{" "}
-        <Link href="/signup" className="font-semibold text-teal-700 hover:text-teal-800 hover:underline">
-          Create an account
-        </Link>
+        <button
+          type="button"
+          onClick={onSwitch}
+          className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+        >
+          Create your account
+        </button>
       </p>
     </div>
   );

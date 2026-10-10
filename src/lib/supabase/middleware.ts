@@ -11,8 +11,10 @@ const PROTECTED_PREFIXES = [
 ];
 
 /**
- * Refreshes the Supabase auth cookie on every request and keeps
- * unauthenticated users out of the signed-in area.
+ * Refreshes the Supabase auth cookie on every request, keeps unauthenticated
+ * users out of the signed-in area (pointing them at the landing popup), and
+ * disables the browser back/forward cache on protected pages so a signed-out
+ * user can't press Back and see a stale authenticated view.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -52,8 +54,11 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = path === "/marketplace" ? "" : `?next=${encodeURIComponent(path)}`;
+    url.pathname = "/";
+    const params = new URLSearchParams();
+    params.set("auth", "login");
+    if (path !== "/marketplace") params.set("next", path);
+    url.search = params.toString();
     return NextResponse.redirect(url);
   }
 
@@ -62,6 +67,11 @@ export async function updateSession(request: NextRequest) {
     url.pathname = "/marketplace";
     url.search = "";
     return NextResponse.redirect(url);
+  }
+
+  if (isProtected && user) {
+    // Never serve a signed-in view from the bfcache after sign-out.
+    supabaseResponse.headers.set("Cache-Control", "no-store");
   }
 
   return supabaseResponse;
