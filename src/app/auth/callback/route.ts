@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 /**
  * Handles the email-verification redirect from Supabase Auth.
@@ -8,8 +8,12 @@ import { createClient } from "@/lib/supabase/server";
  *  - ?code=...            PKCE flow (the normal in-app signup path)
  *  - ?token_hash=...&type=...  implicit verification (dashboard resends,
  *    raw API signups, recovery links)
+ *
+ * Uses the middleware cookie pattern so the session cookie is set on the
+ * redirect response. This is critical for password recovery (type=recovery)
+ * because the user must land on /reset-password with an active session.
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
@@ -18,7 +22,29 @@ export async function GET(request: Request) {
   const next =
     rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/marketplace";
 
-  const supabase = await createClient();
+  // Create a response we can attach cookies to (same pattern as middleware).
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
 
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
