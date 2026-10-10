@@ -4,8 +4,8 @@ Direct 1:1 peer-to-peer skill exchange. Two people, reciprocal skills, one
 session at a time — no tokens, no credits, no group calls.
 
 **Stack:** Next.js 15 (App Router) · Tailwind CSS v4 · Supabase (Postgres,
-Auth, Realtime, Edge Functions) · Zoom (Server-to-Server OAuth) for 1:1
-meeting links.
+Auth, Realtime, Edge Functions) · Jitsi Meet (embedded 1:1 video, in-app,
+no accounts, free).
 
 ---
 
@@ -14,7 +14,7 @@ meeting links.
 | Service | What you need |
 |---|---|
 | [Supabase](https://supabase.com) | A project (free tier is fine). Project URL + anon key from **Project Settings → API**. |
-| [Zoom](https://zoom.us) | A **Server-to-Server OAuth** app: [zoom.us/profile → Apps → Create App → Server-to-Server OAuth](https://marketplace.zoom.us/). You get **Account ID**, **Client ID**, **Client Secret**. The app needs the `meeting:write:admin` (or `meeting:write:user`) scope. |
+| [Jitsi Meet](https://meet.jit.si) | Free, open source video. **No account and no API keys** — the 1:1 call is embedded directly in the session page via the [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/) (participants never leave the app). |
 | Node.js | v20+ (v24 verified). |
 | Supabase CLI | `npm i -g supabase` (v2 verified), or use `npx supabase`. |
 | Docker | Only needed for fully local Supabase (`supabase start`). Skip it if you push to a hosted project. |
@@ -93,25 +93,26 @@ Empty table = every domain allowed.
 
 ---
 
-## 3. Edge function secrets (external step)
+## 3. Meeting rooms (embedded, no external step)
 
-The function is already deployed to the hosted project; the remaining
-external step is the Zoom credentials:
+The edge function is already deployed to the hosted project. **No secrets or
+external accounts are required** — Jitsi Meet is free and needs no API keys:
 
 ```bash
 supabase functions deploy generate-meeting-link
-supabase secrets set \
-  ZOOM_ACCOUNT_ID=your_account_id \
-  ZOOM_CLIENT_ID=your_client_id \
-  ZOOM_CLIENT_SECRET=your_client_secret
 ```
 
 The function is invoked by the client right after a provider accepts a
-session (`status -> ACCEPTED`). It creates a scheduled Zoom meeting and
-stores `join_url` in `sessions.meeting_link`. It is idempotent: if a link
-already exists it is returned unchanged. Without the secrets it fails with
-a clear configuration error (the app shows a retryable "Generate 1:1
-meeting link" button).
+session (`status -> ACCEPTED`). It builds an unguessable
+`https://meet.jit.si/skillgrid-<session-id>-<random>` room URL and stores it
+in `sessions.meeting_link`, which the session page then renders as an
+embedded in-app video call. It is idempotent: if a link already exists it is
+returned unchanged.
+
+> The room URL is only ever shown to the two session participants (the
+> Realtime view + participant RLS). Hardening options for later: run your
+> own Jitsi server and enable [JWT-gated rooms](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/#creating-a-new-meeting-using-external-apijs)
+> for authenticated join-only access.
 
 > If your CLI rejects the minimal `supabase/config.toml`, run
 > `supabase init` once and merge the `[functions.generate-meeting-link]
@@ -165,8 +166,9 @@ npx supabase db advisors --linked   # Supabase security/performance advisors
 
 `npm run e2e` drives the whole product over HTTP: middleware redirects,
 authenticated SSR pages, discovery RPCs, RLS negatives, the session
-lifecycle triggers (overlap, transitions, meeting-link gating), the Zoom
-edge function's configuration-failure path, chat, reviews and moderation.
+lifecycle triggers (overlap, transitions, meeting-link gating), the
+meeting-room edge function (Jitsi URL generation + idempotency), chat,
+reviews and moderation.
 Target it at hosted by overriding `APP_URL`, `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` (the test password is read from `E2E_PASSWORD` /
 `.env.local`).
@@ -230,7 +232,7 @@ one re-checks `auth.uid()`/admin status internally.
 ### Session lifecycle
 
 ```
-PENDING ──(provider accepts, Zoom link generated)──▶ ACCEPTED
+PENDING ──(provider accepts, Jitsi room created)──▶ ACCEPTED
    │                                                  │
    ├─(either cancels)──▶ CANCELLED◀──(either)────────┤
    └─────────────────────────────────────(either)────▶ COMPLETED ──▶ reviews unlock
@@ -263,7 +265,7 @@ meeting link); RLS decides what each subscriber actually receives.
 supabase/
   migrations/            # 4 SQL migrations (schema, RLS, functions, realtime)
   seed.sql               # skill catalog + admin/allowlist snippets
-  functions/generate-meeting-link/   # Zoom S2S OAuth edge function
+  functions/generate-meeting-link/   # embedded Jitsi room generator (no secrets)
   config.toml
 scripts/parse-sql.mjs    # SQL syntax validator (libpg_query)
 scripts/e2e.mjs          # end-to-end smoke test (app + API + triggers + RLS)

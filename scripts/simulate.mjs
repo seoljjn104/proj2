@@ -266,9 +266,10 @@ async function main() {
 
     const fn = await api(S, "POST", "/functions/v1/generate-meeting-link",
       { session_id: sessionId });
-    const msg = typeof fn.data === "object" && fn.data ? fn.data.error : fn.text;
-    check("meeting-link attempt fails gracefully (Zoom not configured)",
-      fn.status >= 400 && /zoom/i.test(String(msg ?? "")),
+    const roomLink = fn.ok && typeof fn.data === "object" && fn.data
+      ? fn.data.meeting_link : null;
+    check("meeting room created (Jitsi link)",
+      typeof roomLink === "string" && roomLink.startsWith("https://meet.jit.si/"),
       `${fn.status}: ${fn.text}`);
   }
 

@@ -3,9 +3,8 @@
  * SkillGRID end-to-end smoke test.
  *
  * Drives the real stack over HTTP: Next.js app pages (SSR + middleware),
- * Supabase auth/REST/RPC (RLS, triggers), and the Zoom edge function
- * (expected to fail with the designed configuration error when secrets
- * are absent).
+ * Supabase auth/REST/RPC (RLS, triggers), and the Jitsi room edge function
+ * (no secrets required — rooms are created in-app).
  *
  * Usage:
  *   node scripts/e2e.mjs                      # local defaults
@@ -304,7 +303,7 @@ async function main() {
     check("requester (non-provider) cannot accept", !badAccept.ok, badAccept.text);
 
     const badLink = await api(A, "PATCH", `/rest/v1/sessions?id=eq.${sessionId}`,
-      { meeting_link: "https://zoom.us/j/123" });
+      { meeting_link: "https://meet.jit.si/not-yours" });
     check("meeting_link not writable while PENDING", !badLink.ok, badLink.text);
 
     const accepted = await api(B, "PATCH", `/rest/v1/sessions?id=eq.${sessionId}`,
@@ -324,19 +323,28 @@ async function main() {
     check("non-participant rejected", [401, 403, 404].includes(outsider.status),
       outsider.text);
 
-    const zoom = await api(A, "POST", "/functions/v1/generate-meeting-link",
+    const room = await api(A, "POST", "/functions/v1/generate-meeting-link",
       { session_id: sessionId });
-    const msg = typeof zoom.data === "object" && zoom.data ? zoom.data.error : zoom.text;
+    const roomLink = room.ok && typeof room.data === "object" && room.data
+      ? room.data.meeting_link
+      : null;
     check(
-      "participant invoke fails with Zoom configuration error (no secrets)",
-      zoom.status >= 400 && /zoom/i.test(String(msg ?? "")),
-      `${zoom.status}: ${zoom.text}`,
+      "participant gets a Jitsi room link",
+      typeof roomLink === "string" && roomLink.startsWith("https://meet.jit.si/"),
+      `${room.status}: ${room.text}`,
     );
 
-    const stillLinkless = await api(A, "GET",
+    const stored = await api(A, "GET",
       `/rest/v1/sessions?id=eq.${sessionId}&select=meeting_link`);
-    check("meeting_link still null after failed invoke",
-      stillLinkless.data?.[0]?.meeting_link == null, stillLinkless.text);
+    check("meeting_link persisted on session",
+      stored.ok && stored.data?.[0]?.meeting_link === roomLink, stored.text);
+
+    const again = await api(A, "POST", "/functions/v1/generate-meeting-link",
+      { session_id: sessionId });
+    check("idempotent — same room returned on re-invoke",
+      again.ok && again.data?.reused === true &&
+        again.data?.meeting_link === roomLink,
+      again.text);
   }
 
   // ---- 6. Chat ------------------------------------------------------------
