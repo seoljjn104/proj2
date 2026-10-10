@@ -19,6 +19,7 @@ yarn-error.log*
 .dev-server*.log
 dev.local.log
 dev.local.pid
+dev.err.log
 
 # env files
 .env
