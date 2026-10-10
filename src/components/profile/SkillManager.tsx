@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { SkillTag, SkillType } from "@/types/database";
+import Alert from "@/components/ui/Alert";
 
 interface MySkill {
   id: number;
@@ -29,9 +31,11 @@ export default function SkillManager() {
   const [newType, setNewType] = useState<SkillType>("OFFERED");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     if (!user) return;
+    setLoading(true);
     const [tagsResult, mineResult] = await Promise.all([
       supabase.from("skill_tags").select("*").order("name"),
       supabase
@@ -44,6 +48,7 @@ export default function SkillManager() {
     // PostgREST types embeds as arrays; skill_tags is many-to-one
     // so the runtime shape is a single object (or null).
     setMine((mineResult.data as unknown as MySkill[]) ?? []);
+    setLoading(false);
   }, [supabase, user]);
 
   useEffect(() => {
@@ -75,7 +80,7 @@ export default function SkillManager() {
       setError(
         insertError.code === "23505"
           ? "That skill is already on this list."
-          : insertError.message,
+          : friendlyDbError(insertError.message),
       );
       return;
     }
@@ -91,7 +96,7 @@ export default function SkillManager() {
       .eq("id", skillId);
     setBusy(false);
     if (deleteError) {
-      setError(deleteError.message);
+      setError(friendlyDbError(deleteError.message));
       return;
     }
     await load();
@@ -108,7 +113,7 @@ export default function SkillManager() {
     );
     if (rpcError) {
       setBusy(false);
-      setError(rpcError.message);
+      setError(friendlyDbError(rpcError.message));
       return;
     }
     // int8 may arrive as number or string depending on PostgREST config.
@@ -123,7 +128,7 @@ export default function SkillManager() {
       setError(
         insertError.code === "23505"
           ? "That skill is already on this list."
-          : insertError.message,
+          : friendlyDbError(insertError.message),
       );
       return;
     }
@@ -152,32 +157,38 @@ export default function SkillManager() {
           <h3 className="font-semibold text-slate-900">
             {type === "OFFERED" ? "I can teach" : "I want to learn"}
           </h3>
-          <span className="text-xs font-medium text-slate-400">
+          <span className="text-xs font-medium text-slate-500">
             {type === "OFFERED" ? "OFFERED" : "WANTED"} · {items.length}
           </span>
         </div>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {items.length === 0 && (
-            <span className="text-sm text-slate-400">Nothing listed yet.</span>
-          )}
-          {items.map((m) => (
-            <span
-              key={m.id}
-              className={type === "OFFERED" ? "chip-offered" : "chip-wanted"}
-            >
-              {m.skill_tags?.name ?? "Unknown"}
-              <button
-                type="button"
-                onClick={() => void removeSkill(m.id)}
-                className="ml-1.5 font-bold opacity-60 hover:opacity-100"
-                aria-label={`Remove ${m.skill_tags?.name ?? ""}`}
-                disabled={busy}
+          {loading ? (
+            <>
+              <span className="skeleton h-6 w-20" />
+              <span className="skeleton h-6 w-16" />
+            </>
+          ) : items.length === 0 ? (
+            <span className="text-sm text-slate-500">Nothing listed yet.</span>
+          ) : (
+            items.map((m) => (
+              <span
+                key={m.id}
+                className={type === "OFFERED" ? "chip-offered" : "chip-wanted"}
               >
-                ×
-              </button>
-            </span>
-          ))}
+                {m.skill_tags?.name ?? "Unknown"}
+                <button
+                  type="button"
+                  onClick={() => void removeSkill(m.id)}
+                  className="ml-1.5 font-bold opacity-60 hover:opacity-100"
+                  aria-label={`Remove ${m.skill_tags?.name ?? ""}`}
+                  disabled={busy}
+                >
+                  ×
+                </button>
+              </span>
+            ))
+          )}
         </div>
 
         <form
@@ -233,6 +244,7 @@ export default function SkillManager() {
             onChange={(e) => setNewName(e.target.value)}
             maxLength={60}
             required
+            aria-label="New skill name"
           />
           <input
             className="input min-w-32 flex-1"
@@ -240,6 +252,7 @@ export default function SkillManager() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             maxLength={40}
+            aria-label="New skill category (optional)"
           />
           <select
             className="input w-auto"
@@ -254,11 +267,7 @@ export default function SkillManager() {
             {busy ? "Adding…" : "Create & add"}
           </button>
         </div>
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+        {error && <Alert>{error}</Alert>}
       </form>
     </div>
   );

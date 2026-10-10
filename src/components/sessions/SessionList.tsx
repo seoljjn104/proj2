@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { ProfileDirectory, Session } from "@/types/database";
 import SessionStatusBadge from "./SessionStatusBadge";
+import Avatar from "@/components/ui/Avatar";
+import Alert from "@/components/ui/Alert";
 
 interface Enriched {
   session: Session;
@@ -29,15 +32,23 @@ export default function SessionList() {
   const { user, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<Enriched[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    setError(null);
 
-    const { data } = await supabase
+    const { data, error: queryError } = await supabase
       .from("sessions")
       .select("*")
       .order("scheduled_at", { ascending: false });
+    if (queryError) {
+      setError(friendlyDbError(queryError.message));
+      setRows([]);
+      setLoading(false);
+      return;
+    }
     const sessions = (data as Session[]) ?? [];
 
     const partnerIds = [
@@ -78,9 +89,9 @@ export default function SessionList() {
 
   if (authLoading || loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3" aria-busy="true">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="card h-20 animate-pulse bg-slate-100" />
+          <div key={i} className="skeleton h-20" />
         ))}
       </div>
     );
@@ -109,14 +120,12 @@ export default function SessionList() {
             <li key={session.id}>
               <Link
                 href={`/sessions/${session.id}`}
-                className="card flex flex-wrap items-center gap-4 transition-shadow hover:shadow-md"
+                className="card card-interactive flex flex-wrap items-center gap-4"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-sm font-semibold text-teal-800">
-                  {(partnerName[0] ?? "?").toUpperCase()}
-                </div>
+                <Avatar name={partnerName} size="md" />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900">{partnerName}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-600">
                     {formatSlot(session.scheduled_at)} ·{" "}
                     {session.duration_minutes} min ·{" "}
                     {session.requester_id === partnerId
@@ -136,11 +145,22 @@ export default function SessionList() {
     );
   }
 
+  if (error) {
+    return (
+      <div>
+        <Alert>{error}</Alert>
+        <button type="button" className="btn-secondary mt-3" onClick={() => void load()}>
+          Try again
+        </button>
+      </div>
+    );
+  }
+
   if (rows.length === 0) {
     return (
       <div className="card text-center">
         <p className="font-medium text-slate-700">No sessions yet.</p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           Propose a 1:1 slot from the Marketplace or Matching Hub.
         </p>
         <Link href="/marketplace" className="btn-primary mt-4 inline-flex">

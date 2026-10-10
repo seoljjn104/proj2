@@ -8,12 +8,16 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { Message, ProfileDirectory, Session } from "@/types/database";
 import SessionActions from "@/components/sessions/SessionActions";
 import SessionStatusBadge from "@/components/sessions/SessionStatusBadge";
 import ReviewSection from "@/components/sessions/ReviewSection";
+import MeetingRoom from "@/components/sessions/MeetingRoom";
+import Alert from "@/components/ui/Alert";
 
 interface Props {
   sessionId: string;
@@ -30,6 +34,14 @@ function formatSlot(iso: string | null): string {
   });
 }
 
+function roomNameFromLink(link: string): string {
+  try {
+    return new URL(link).pathname.replace(/^\//, "").slice(0, 200) || "session";
+  } catch {
+    return `skillgrid-session-${link.slice(-36)}`;
+  }
+}
+
 /**
  * Active Session view: header + lifecycle actions + realtime chat.
  * Subscribes to public.messages (new messages) and public.sessions
@@ -37,7 +49,7 @@ function formatSlot(iso: string | null): string {
  */
 export default function SessionChat({ sessionId }: Props) {
   const supabase = useMemo(() => createClient(), []);
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
 
   const [session, setSession] = useState<Session | null>(null);
   const [partner, setPartner] = useState<ProfileDirectory | null>(null);
@@ -137,7 +149,12 @@ export default function SessionChat({ sessionId }: Props) {
   }, [supabase, user, authLoading, sessionId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    bottomRef.current?.scrollIntoView({
+      behavior: reduce ? "auto" : "smooth",
+    });
   }, [messages]);
 
   async function onSend(e: FormEvent) {
@@ -160,7 +177,7 @@ export default function SessionChat({ sessionId }: Props) {
     setSending(false);
 
     if (error) {
-      setSendError(error.message);
+      setSendError(friendlyDbError(error.message));
       return;
     }
     const inserted = data as Message;
@@ -172,18 +189,19 @@ export default function SessionChat({ sessionId }: Props) {
   }
 
   if (authLoading || loading) {
-    return (
-      <div className="card h-96 animate-pulse bg-slate-100" aria-busy="true" />
-    );
+    return <div className="skeleton h-96" aria-busy="true" />;
   }
 
   if (missing || !session || !user) {
     return (
       <div className="card text-center">
         <h1 className="text-lg font-semibold">Session not found</h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           It may have been removed, or it isn&apos;t yours to view.
         </p>
+        <Link href="/sessions" className="btn-secondary mt-4 inline-flex">
+          Back to sessions
+        </Link>
       </div>
     );
   }
@@ -194,7 +212,14 @@ export default function SessionChat({ sessionId }: Props) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card">
+      <div>
+        <Link
+          href="/sessions"
+          className="inline-flex items-center gap-1 text-sm font-medium text-teal-800 hover:text-teal-900"
+        >
+          <span aria-hidden="true">←</span> All sessions
+        </Link>
+        <div className="card mt-3">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
@@ -203,12 +228,12 @@ export default function SessionChat({ sessionId }: Props) {
               </h1>
               <SessionStatusBadge status={session.status} />
             </div>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-600">
               {isRequester ? "You proposed" : `${partnerName} proposed`} ·{" "}
               {formatSlot(session.scheduled_at)} ·{" "}
               {session.duration_minutes} min
             </p>
-            <p className="mt-0.5 text-xs text-slate-400">
+            <p className="mt-0.5 text-xs text-slate-500">
               You are the <strong>{isRequester ? "requester" : "provider"}</strong>{" "}
               of this 1:1 exchange.
             </p>
@@ -218,7 +243,22 @@ export default function SessionChat({ sessionId }: Props) {
         <div className="mt-4">
           <SessionActions session={session} onUpdate={setSession} />
         </div>
+        </div>
       </div>
+
+      {/* Embedded 1:1 video call (Jitsi Meet, in-app) */}
+      {session.status === "ACCEPTED" && session.meeting_link && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            1:1 video
+          </h2>
+          <MeetingRoom
+            roomName={roomNameFromLink(session.meeting_link)}
+            displayName={profile?.name || "SkillGRID member"}
+            href={session.meeting_link}
+          />
+        </div>
+      )}
 
       {/* Chat */}
       <div className="card flex h-[32rem] flex-col p-0">
@@ -228,9 +268,14 @@ export default function SessionChat({ sessionId }: Props) {
           </h2>
         </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto px-5 py-4">
+        <div
+          role="log"
+          aria-live="polite"
+          aria-label="Session chat messages"
+          className="flex-1 space-y-3 overflow-y-auto px-5 py-4"
+        >
           {messages.length === 0 && (
-            <p className="py-8 text-center text-sm text-slate-400">
+            <p className="py-8 text-center text-sm text-slate-500">
               No messages yet — say hi and confirm what you&apos;ll exchange.
             </p>
           )}
@@ -244,14 +289,14 @@ export default function SessionChat({ sessionId }: Props) {
                 <div
                   className={`max-w-[75%] rounded-2xl px-4 py-2 text-sm ${
                     mine
-                      ? "bg-teal-600 text-white"
+                      ? "bg-teal-700 text-white"
                       : "bg-slate-100 text-slate-800"
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   <p
-                    className={`mt-1 text-[10px] ${
-                      mine ? "text-teal-100" : "text-slate-400"
+                    className={`mt-1 text-[11px] ${
+                      mine ? "text-teal-50" : "text-slate-500"
                     }`}
                   >
                     {new Date(m.created_at).toLocaleTimeString(undefined, {
@@ -282,14 +327,15 @@ export default function SessionChat({ sessionId }: Props) {
             type="submit"
             className="btn-primary"
             disabled={sending || !text.trim()}
+            aria-busy={sending}
           >
-            {sending ? "…" : "Send"}
+            {sending ? "Sending…" : "Send"}
           </button>
         </form>
         {sendError && (
-          <p className="bg-red-50 px-4 py-2 text-xs text-red-700">
-            {sendError}
-          </p>
+          <div className="p-3 pt-0">
+            <Alert>{sendError}</Alert>
+          </div>
         )}
       </div>
 

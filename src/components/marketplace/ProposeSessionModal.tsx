@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
+import Alert from "@/components/ui/Alert";
 
 /** Minimal target shape: works for marketplace cards and match cards. */
 export interface ProposeTarget {
@@ -18,8 +20,8 @@ interface Props {
 
 /**
  * Proposes a PENDING 1:1 session slot. Overlap prevention is
- * enforced by the sessions_no_overlap trigger; we surface its
- * 23514 error message directly.
+ * enforced by the sessions_no_overlap trigger; its error is mapped
+ * to plain language by friendlyDbError().
  */
 export default function ProposeSessionModal({ provider, onClose }: Props) {
   const supabase = createClient();
@@ -29,13 +31,44 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
   const [duration, setDuration] = useState(60);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
+  // Lock scroll, move focus in, trap Tab, restore focus on close.
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    firstFieldRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusables || focusables.length === 0) return;
+      const list = Array.from(focusables);
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
+
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus?.();
+    };
   }, [onClose]);
 
   async function onSubmit(e: FormEvent) {
@@ -67,11 +100,7 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
     setBusy(false);
 
     if (insertError) {
-      setError(
-        insertError.code === "23514" || insertError.code === "23505"
-          ? insertError.message.replace(/^.*:\s*/, "")
-          : `Could not propose the session: ${insertError.message}`,
-      );
+      setError(friendlyDbError(insertError.message));
       return;
     }
 
@@ -80,71 +109,71 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className="card w-full max-w-md"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Propose a session"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-lg font-semibold">Propose a 1:1 session</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          With <strong>{provider.name ?? "this user"}</strong>. They can accept
-          or decline — you&apos;ll chat in the session room either way.
-        </p>
+    <div className="modal-backdrop" onClick={onClose} role="presentation">
+      <div className="flex min-h-full items-center justify-center">
+        <div
+          ref={panelRef}
+          className="card modal-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Propose a session"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="text-lg font-semibold">Propose a 1:1 session</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            With <strong>{provider.name ?? "this user"}</strong>. They can accept
+            or decline — you&apos;ll chat in the session room either way.
+          </p>
 
-        <form onSubmit={onSubmit} className="mt-5 space-y-4">
-          <div>
-            <label htmlFor="when" className="mb-1 block text-sm font-medium">
-              Date &amp; time
-            </label>
-            <input
-              id="when"
-              type="datetime-local"
-              required
-              className="input"
-              value={when}
-              onChange={(e) => setWhen(e.target.value)}
-            />
-          </div>
+          <form onSubmit={onSubmit} className="mt-5 space-y-4">
+            <div>
+              <label htmlFor="when" className="mb-1 block text-sm font-medium">
+                Date &amp; time
+              </label>
+              <input
+                id="when"
+                ref={firstFieldRef}
+                type="datetime-local"
+                required
+                className="input"
+                value={when}
+                onChange={(e) => setWhen(e.target.value)}
+                aria-describedby="when-help"
+              />
+              <p id="when-help" className="mt-1 text-xs text-slate-500">
+                Shown in your local time.
+              </p>
+            </div>
 
-          <div>
-            <label htmlFor="duration" className="mb-1 block text-sm font-medium">
-              Duration
-            </label>
-            <select
-              id="duration"
-              className="input"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-            >
-              <option value={30}>30 minutes</option>
-              <option value={60}>60 minutes</option>
-              <option value={90}>90 minutes</option>
-              <option value={120}>120 minutes</option>
-            </select>
-          </div>
+            <div>
+              <label htmlFor="duration" className="mb-1 block text-sm font-medium">
+                Duration
+              </label>
+              <select
+                id="duration"
+                className="input"
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+              >
+                <option value={30}>30 minutes</option>
+                <option value={60}>60 minutes</option>
+                <option value={90}>90 minutes</option>
+                <option value={120}>120 minutes</option>
+              </select>
+            </div>
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
+            {error && <Alert>{error}</Alert>}
 
-          <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary flex-1" disabled={busy}>
-              {busy ? "Sending…" : "Send proposal"}
-            </button>
-          </div>
-        </form>
+            <div className="flex gap-3">
+              <button type="button" onClick={onClose} className="btn-secondary flex-1">
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary flex-1" disabled={busy} aria-busy={busy}>
+                {busy ? "Sending…" : "Send proposal"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

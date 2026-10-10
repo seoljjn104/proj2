@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/ui/PasswordInput";
+import Alert from "@/components/ui/Alert";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -32,7 +33,7 @@ export default function LoginPage() {
   return (
     <div className="card w-full max-w-md">
       <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-slate-600">
         Sign in to keep trading skills with your peers.
       </p>
 
@@ -66,20 +67,16 @@ export default function LoginPage() {
           />
         </div>
 
-        {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </p>
-        )}
+        {error && <Alert>{error}</Alert>}
 
-        <button type="submit" className="btn-primary w-full" disabled={busy}>
+        <button type="submit" className="btn-primary w-full" disabled={busy} aria-busy={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-500">
+      <p className="mt-4 text-center text-sm text-slate-600">
         New here?{" "}
-        <Link href="/signup" className="font-medium text-teal-700 hover:underline">
+        <Link href="/signup" className="font-medium text-teal-800 hover:underline">
           Create an account
         </Link>
       </p>

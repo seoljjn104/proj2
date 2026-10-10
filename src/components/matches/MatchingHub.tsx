@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { ReciprocalMatch } from "@/types/database";
 import MatchCard from "./MatchCard";
 import ProposeSessionModal, {
   type ProposeTarget,
 } from "@/components/marketplace/ProposeSessionModal";
+import Alert from "@/components/ui/Alert";
 
 /**
  * Matching Hub — reciprocal 1:1 fits only:
@@ -36,7 +38,7 @@ export default function MatchingHub() {
     ]);
     setHasSkills((skillsResult.count ?? 0) > 0);
     if (result.error) {
-      setError(result.error.message);
+      setError(friendlyDbError(result.error.message));
       setMatches([]);
     } else {
       setMatches((result.data as ReciprocalMatch[]) ?? []);
@@ -53,7 +55,7 @@ export default function MatchingHub() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Matching Hub</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             People where you can teach something they want{" "}
             <em>and</em> learn something they offer — a true two-way exchange.
           </p>
@@ -64,21 +66,27 @@ export default function MatchingHub() {
       </div>
 
       {error && (
-        <p className="mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <div className="mt-6">
+          <Alert>{error}</Alert>
+          <button type="button" className="btn-secondary mt-3" onClick={() => void load()}>
+            Try again
+          </button>
+        </div>
       )}
 
       {loading || authLoading ? (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          aria-busy="true"
+        >
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="card h-64 animate-pulse bg-slate-100" />
+            <div key={i} className="skeleton h-64" />
           ))}
         </div>
       ) : matches.length === 0 ? (
-        <div className="card mt-10 text-center">
+        <div className="card mt-8 text-center">
           <p className="font-medium text-slate-700">No direct matches yet.</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             {hasSkills
               ? "Keep your OFFERED and WANTED skills sharp — new matches appear as soon as someone complements your grid."
               : "Add OFFERED and WANTED skills to your profile so we can pair you."}

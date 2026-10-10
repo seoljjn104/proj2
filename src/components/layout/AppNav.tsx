@@ -1,31 +1,42 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import Avatar from "@/components/ui/Avatar";
 
 const LINKS = [
   { href: "/marketplace", label: "Marketplace" },
-  { href: "/matches", label: "Matching Hub" },
+  { href: "/matches", label: "Matches" },
   { href: "/sessions", label: "Sessions" },
-  { href: "/profile", label: "My Profile" },
+  { href: "/profile", label: "Profile" },
 ];
 
 export default function AppNav() {
   const pathname = usePathname();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    await signOut();
+  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <Link
           href="/marketplace"
-          className="text-lg font-semibold tracking-tight text-slate-900"
+          className="shrink-0 text-lg font-semibold tracking-tight text-slate-900"
         >
           Skill<span className="text-teal-700">GRID</span>
         </Link>
 
-        <nav className="flex flex-wrap items-center gap-1 text-sm">
+        <nav
+          aria-label="Primary"
+          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-sm [scrollbar-width:none]"
+        >
           {LINKS.map((l) => {
             const active =
               pathname === l.href || pathname.startsWith(`${l.href}/`);
@@ -33,7 +44,8 @@ export default function AppNav() {
               <Link
                 key={l.href}
                 href={l.href}
-                className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+                aria-current={active ? "page" : undefined}
+                className={`shrink-0 rounded-lg px-3 py-1.5 font-medium transition-colors ${
                   active
                     ? "bg-teal-50 text-teal-800"
                     : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -46,7 +58,8 @@ export default function AppNav() {
           {isAdmin && (
             <Link
               href="/admin"
-              className={`rounded-lg px-3 py-1.5 font-medium transition-colors ${
+              aria-current={pathname.startsWith("/admin") ? "page" : undefined}
+              className={`shrink-0 rounded-lg px-3 py-1.5 font-medium transition-colors ${
                 pathname.startsWith("/admin")
                   ? "bg-amber-50 text-amber-800"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
@@ -57,21 +70,25 @@ export default function AppNav() {
           )}
         </nav>
 
-        <div className="ml-auto flex items-center gap-3 text-sm">
-          {!loading && user && (
-            <>
-              <span className="hidden items-center gap-2 text-slate-500 sm:flex">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800">
-                  {(profile?.name ?? user.email ?? "?").trim().charAt(0).toUpperCase()}
-                </span>
+        {!loading && user && (
+          <div className="flex shrink-0 items-center gap-3 text-sm">
+            <span className="hidden items-center gap-2 text-slate-600 sm:flex">
+              <Avatar name={profile?.name ?? user.email} size="sm" />
+              <span className="max-w-40 truncate">
                 {profile?.name ?? user.email}
               </span>
-              <button onClick={() => void signOut()} className="btn-secondary">
-                Sign out
-              </button>
-            </>
-          )}
-        </div>
+            </span>
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              className="btn-secondary"
+              disabled={signingOut}
+              aria-busy={signingOut}
+            >
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );

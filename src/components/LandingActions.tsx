@@ -13,10 +13,7 @@ export function LandingActions() {
     if (!loading && user) router.replace("/marketplace");
   }, [loading, user, router]);
 
-  if (loading) return null;
-
-  if (user) return null;
-
+  // Always render the CTAs so the hero does not shift while auth resolves.
   return (
     <div className="mt-8 flex flex-wrap items-center gap-3">
       <Link href="/signup" className="btn-primary px-6 py-3 text-base">

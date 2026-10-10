@@ -1,50 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { FunctionsHttpError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError, friendlyFunctionError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { Session } from "@/types/database";
+import Alert from "@/components/ui/Alert";
 
 interface Props {
   session: Session;
   onUpdate: (session: Session) => void;
 }
 
-async function friendlyFunctionError(error: unknown): Promise<string> {
-  if (error instanceof FunctionsHttpError) {
-    try {
-      const body = (await error.context.json()) as { error?: string };
-      if (body?.error) return body.error;
-    } catch {
-      // fall through to generic message
-    }
-  }
-  if (error instanceof Error) return error.message;
-  return "The meeting service returned an error.";
-}
-
-function friendlyDbError(message: string): string {
-  if (message.includes("overlaps an existing")) {
-    return "That time slot overlaps another session for one of you.";
-  }
-  if (message.includes("scheduled time is required")) {
-    return "This session has no scheduled time.";
-  }
-  if (message.includes("Only the provider can accept")) {
-    return "Only the provider can accept this proposal.";
-  }
-  if (message.includes("terminal") || message.includes("cannot change status")) {
-    return "This session is already closed.";
-  }
-  return message;
-}
-
 /**
  * Session lifecycle controls:
  *   provider  : ACCEPT / DECLINE a proposal
  *   anyone    : CANCEL, COMPLETE (when allowed)
- *   on accept : serverless Zoom link generation (retryable)
+ *   on accept : create the embedded Jitsi room (retryable)
  */
 export default function SessionActions({ session, onUpdate }: Props) {
   const supabase = createClient();
@@ -93,7 +65,7 @@ export default function SessionActions({ session, onUpdate }: Props) {
       const link = (data as { meeting_link?: string })?.meeting_link;
       if (link) {
         onUpdate({ ...target, meeting_link: link });
-        setInfo("Meeting link ready.");
+        setInfo("Meeting room is ready.");
       }
     } catch (err) {
       setError(await friendlyFunctionError(err));
@@ -118,9 +90,10 @@ export default function SessionActions({ session, onUpdate }: Props) {
               type="button"
               className="btn-primary"
               disabled={busy !== null}
+              aria-busy={busy === "accept"}
               onClick={() => void accept()}
             >
-              {busy === "accept" ? "Accepting…" : "Accept & generate link"}
+              {busy === "accept" ? "Accepting…" : "Accept & create room"}
             </button>
             <button
               type="button"
@@ -151,11 +124,10 @@ export default function SessionActions({ session, onUpdate }: Props) {
                 type="button"
                 className="btn-primary"
                 disabled={busy !== null}
+                aria-busy={busy === "link"}
                 onClick={() => void generateLink()}
               >
-                {busy === "link"
-                  ? "Generating…"
-                  : "Generate 1:1 meeting link"}
+                {busy === "link" ? "Creating…" : "Create meeting room"}
               </button>
             )}
             <button
@@ -178,7 +150,7 @@ export default function SessionActions({ session, onUpdate }: Props) {
         )}
 
         {terminal && (
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-slate-600">
             This session is closed.
           </span>
         )}
@@ -189,19 +161,18 @@ export default function SessionActions({ session, onUpdate }: Props) {
           href={session.meeting_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-primary inline-flex"
+          className="btn-secondary inline-flex"
         >
-          Join 1:1 call
+          Open in a new tab
         </a>
       )}
 
-      {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      )}
+      {error && <Alert>{error}</Alert>}
       {info && (
-        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <p
+          role="status"
+          className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+        >
           {info}
         </p>
       )}

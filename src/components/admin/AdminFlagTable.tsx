@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { AdminFlagRow } from "@/types/database";
+import Alert from "@/components/ui/Alert";
 
 /**
  * Admin moderation board (public.get_admin_flags() RPC).
@@ -25,7 +27,7 @@ export default function AdminFlagTable() {
     setLoading(true);
     const { data, error: rpcError } = await supabase.rpc("get_admin_flags");
     if (rpcError) {
-      setError(rpcError.message);
+      setError(friendlyDbError(rpcError.message));
     } else {
       const sorted = (((data as AdminFlagRow[]) ?? [])).slice().sort(
         (a, b) =>
@@ -43,14 +45,14 @@ export default function AdminFlagTable() {
   }, [authLoading, isAdmin, load]);
 
   if (authLoading || loading) {
-    return <div className="card h-40 animate-pulse bg-slate-100" />;
+    return <div className="skeleton h-40" aria-busy="true" />;
   }
 
   if (!isAdmin) {
     return (
       <div className="card text-center">
         <p className="font-medium text-slate-700">Administrators only.</p>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-slate-600">
           This board flags accounts for moderation review.
         </p>
       </div>
@@ -66,7 +68,7 @@ export default function AdminFlagTable() {
     });
     setBusy(false);
     if (rpcError) {
-      setError(rpcError.message);
+      setError(friendlyDbError(rpcError.message));
       return;
     }
     setFlaggingId(null);
@@ -82,7 +84,7 @@ export default function AdminFlagTable() {
     });
     setBusy(false);
     if (rpcError) {
-      setError(rpcError.message);
+      setError(friendlyDbError(rpcError.message));
       return;
     }
     await load();
@@ -91,9 +93,9 @@ export default function AdminFlagTable() {
   return (
     <div>
       {error && (
-        <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <div className="mb-4">
+          <Alert>{error}</Alert>
+        </div>
       )}
 
       <div className="card overflow-x-auto p-0">
@@ -111,7 +113,7 @@ export default function AdminFlagTable() {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                  No members found.
+                  No members to show.
                 </td>
               </tr>
             )}
@@ -129,9 +131,14 @@ export default function AdminFlagTable() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-amber-500">
-                    {"★".repeat(Math.round(r.avg_rating))}
-                    <span className="text-slate-300">
+                  <span
+                    className="text-amber-500"
+                    aria-label={`${Number(r.avg_rating).toFixed(1)} out of 5 stars`}
+                  >
+                    <span aria-hidden="true">
+                      {"★".repeat(Math.round(r.avg_rating))}
+                    </span>
+                    <span aria-hidden="true" className="text-slate-300">
                       {"★".repeat(5 - Math.round(r.avg_rating))}
                     </span>
                   </span>{" "}
@@ -143,11 +150,11 @@ export default function AdminFlagTable() {
                 <td className="px-4 py-3">
                   {r.flagged ? (
                     <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                      FLAGGED
+                      Flagged
                     </span>
                   ) : (
                     <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                      OK
+                      Ok
                     </span>
                   )}
                 </td>
@@ -162,6 +169,7 @@ export default function AdminFlagTable() {
                           onChange={(e) => setReason(e.target.value)}
                           maxLength={200}
                           autoFocus
+                          aria-label="Flag reason"
                         />
                         <button
                           type="button"

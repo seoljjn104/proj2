@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import type { MarketplaceProfile } from "@/types/database";
 import ProfileCard from "./ProfileCard";
 import ProposeSessionModal from "./ProposeSessionModal";
+import Alert from "@/components/ui/Alert";
 
 /**
  * Marketplace Feed — renders public profile cards from the
@@ -30,7 +32,7 @@ export default function MarketplaceFeed() {
         { p_search: q || null, p_limit: 60 },
       );
       if (rpcError) {
-        setError(rpcError.message);
+        setError(friendlyDbError(rpcError.message));
         setProfiles([]);
       } else {
         setProfiles((data as MarketplaceProfile[]) ?? []);
@@ -60,7 +62,7 @@ export default function MarketplaceFeed() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Marketplace</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-600">
             Browse members and see who fits your skill grid.
             {directCount > 0 && (
               <span className="ml-1 font-medium text-amber-700">
@@ -84,7 +86,7 @@ export default function MarketplaceFeed() {
               type="checkbox"
               checked={onlyDirect}
               onChange={(e) => setOnlyDirect(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 accent-teal-600"
+              className="h-4 w-4 rounded border-slate-300 accent-teal-700"
             />
             Direct matches only
           </label>
@@ -92,26 +94,36 @@ export default function MarketplaceFeed() {
       </div>
 
       {error && (
-        <p className="mt-6 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <div className="mt-6">
+          <Alert>{error}</Alert>
+          <button
+            type="button"
+            className="btn-secondary mt-3"
+            onClick={() => void load(search)}
+          >
+            Try again
+          </button>
+        </div>
       )}
 
       {loading ? (
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div
+          className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          aria-busy="true"
+        >
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="card h-56 animate-pulse bg-slate-100" />
+            <div key={i} className="skeleton h-56" />
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="card mt-10 text-center">
+        <div className="card mt-8 text-center">
           <p className="font-medium text-slate-700">
             {search
               ? `No profiles match “${search}”.`
               : "No profiles yet — be the first to add your skills."}
           </p>
           {!search && (
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-600">
               Head to your profile to list OFFERED and WANTED skills.
             </p>
           )}

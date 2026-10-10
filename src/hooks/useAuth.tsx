@@ -15,6 +15,24 @@ import { createClient } from "@/lib/supabase/client";
 import { isAllowedEmailDomain, allowedDomainsHint } from "@/lib/email-domains";
 import type { Profile } from "@/types/database";
 
+/** Maps raw Supabase auth errors to plain language. */
+function friendlyAuthError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("already registered") || m.includes("already exists")) {
+    return "An account with this email already exists.";
+  }
+  if (m.includes("password should be at least")) {
+    return "Password is too short. Use at least 8 characters.";
+  }
+  if (m.includes("email not confirmed")) {
+    return "Confirm your email first. Check your inbox for the link.";
+  }
+  if (m.includes("rate limit") || m.includes("too many")) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  return "Something went wrong. Please try again.";
+}
+
 interface SignUpResult {
   error: string | null;
   /** True when Supabase requires email confirmation before login. */
@@ -105,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) {
         return error.message === "Invalid login credentials"
           ? "Invalid email or password."
-          : error.message;
+          : friendlyAuthError(error.message);
       }
       router.refresh();
       return null;
@@ -147,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
 
-      if (error) return { error: error.message, needsConfirmation: false };
+      if (error) return { error: friendlyAuthError(error.message), needsConfirmation: false };
       return { error: null, needsConfirmation: !data.session };
     },
     [supabase],

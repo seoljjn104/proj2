@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { ProfileDirectory, Review, Session } from "@/types/database";
+import Alert from "@/components/ui/Alert";
 
 interface Props {
   session: Session;
@@ -12,8 +14,10 @@ interface Props {
 function Stars({ value }: { value: number }) {
   return (
     <span className="text-amber-500" aria-label={`${value} out of 5 stars`}>
-      {"★".repeat(value)}
-      <span className="text-slate-300">{"★".repeat(5 - value)}</span>
+      <span aria-hidden="true">{"★".repeat(value)}</span>
+      <span aria-hidden="true" className="text-slate-300">
+        {"★".repeat(5 - value)}
+      </span>
     </span>
   );
 }
@@ -27,12 +31,14 @@ export default function ReviewSection({ session }: Props) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
     const { data: reviewRows } = await supabase
       .from("reviews")
       .select("*")
@@ -52,6 +58,7 @@ export default function ReviewSection({ session }: Props) {
       }
       setNames(map);
     }
+    setLoading(false);
   }, [supabase, session.id]);
 
   useEffect(() => {
@@ -80,11 +87,7 @@ export default function ReviewSection({ session }: Props) {
     });
     setBusy(false);
     if (insertError) {
-      setError(
-        insertError.code === "23514" || insertError.code === "23503"
-          ? insertError.message.replace(/^.*:\s*/, "")
-          : insertError.message,
-      );
+      setError(friendlyDbError(insertError.message));
       return;
     }
     setComment("");
@@ -96,7 +99,7 @@ export default function ReviewSection({ session }: Props) {
       <h2 className="font-semibold text-slate-900">Ratings &amp; reviews</h2>
 
       {!completed && (
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-slate-600">
           Reviews unlock once this session is marked completed.
         </p>
       )}
@@ -112,28 +115,29 @@ export default function ReviewSection({ session }: Props) {
                   type="button"
                   onClick={() => setRating(n)}
                   className={`text-2xl leading-none transition-colors ${
-                    n <= rating ? "text-amber-500" : "text-slate-300"
+                    n <= rating ? "text-amber-500" : "text-slate-300 hover:text-amber-400"
                   }`}
                   aria-label={`${n} star${n === 1 ? "" : "s"}`}
+                  aria-pressed={n === rating}
                 >
                   ★
                 </button>
               ))}
             </div>
           </div>
+          <label htmlFor="review-comment" className="sr-only">
+            Review comment
+          </label>
           <textarea
+            id="review-comment"
             className="input min-h-20"
             placeholder="How did the exchange go? (optional)"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             maxLength={1000}
           />
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-          <button type="submit" className="btn-primary" disabled={busy}>
+          {error && <Alert>{error}</Alert>}
+          <button type="submit" className="btn-primary" disabled={busy} aria-busy={busy}>
             {busy ? "Submitting…" : "Submit review"}
           </button>
         </form>
@@ -141,29 +145,36 @@ export default function ReviewSection({ session }: Props) {
 
       {completed && myReview && (
         <p className="mt-2 text-sm text-emerald-700">
-          You rated this session {myReview.rating}/5. Thanks!
+          You rated this session {myReview.rating}/5. Thanks.
         </p>
       )}
 
-      {reviews.length > 0 && (
-        <ul className="mt-4 space-y-3">
-          {reviews.map((r) => (
-            <li key={r.id} className="rounded-lg bg-slate-50 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-slate-800">
-                  {names[r.reviewer_id] ?? "Member"}
-                </span>
-                <Stars value={r.rating} />
-              </div>
-              {r.comment && (
-                <p className="mt-1 text-sm text-slate-600">{r.comment}</p>
-              )}
-              <p className="mt-1 text-xs text-slate-400">
-                {new Date(r.created_at).toLocaleDateString()}
-              </p>
-            </li>
-          ))}
-        </ul>
+      {loading ? (
+        <div className="mt-4 space-y-3" aria-busy="true">
+          <div className="skeleton h-16" />
+          <div className="skeleton h-16" />
+        </div>
+      ) : (
+        reviews.length > 0 && (
+          <ul className="mt-4 space-y-3">
+            {reviews.map((r) => (
+              <li key={r.id} className="rounded-lg bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-slate-800">
+                    {names[r.reviewer_id] ?? "Member"}
+                  </span>
+                  <Stars value={r.rating} />
+                </div>
+                {r.comment && (
+                  <p className="mt-1 text-sm text-slate-600">{r.comment}</p>
+                )}
+                <p className="mt-1 text-xs text-slate-500">
+                  {new Date(r.created_at).toLocaleDateString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )
       )}
     </div>
   );
