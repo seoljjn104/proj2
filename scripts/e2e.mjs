@@ -278,21 +278,28 @@ async function main() {
   let pendingId;
   {
     const slot = iso(24);
-    const created = await api(A, "POST", "/rest/v1/sessions", {
-      requester_id: alice.user.id,
-      provider_id: bob.user.id,
-      scheduled_at: slot,
-      duration_minutes: 60,
-    }, { Prefer: "return=representation" });
-    check("requester creates PENDING session",
-      created.ok && created.data?.[0]?.status === "PENDING", created.text);
-    sessionId = created.data?.[0]?.id;
+    const created = await rpc(A, "propose_session", {
+      p_provider: bob.user.id,
+      p_scheduled_at: slot,
+      p_duration_minutes: 60,
+    });
+    check("requester proposes PENDING session (RPC)",
+      created.ok && typeof created.data === "string", created.text);
+    sessionId = created.ok ? created.data : undefined;
 
-    const overlap = await api(A, "POST", "/rest/v1/sessions", {
+    const directInsert = await api(A, "POST", "/rest/v1/sessions", {
       requester_id: alice.user.id,
       provider_id: bob.user.id,
-      scheduled_at: slot,
+      scheduled_at: iso(25),
       duration_minutes: 60,
+    });
+    check("direct session INSERT is no longer allowed",
+      !directInsert.ok, directInsert.text);
+
+    const overlap = await rpc(A, "propose_session", {
+      p_provider: bob.user.id,
+      p_scheduled_at: slot,
+      p_duration_minutes: 60,
     });
     check("overlapping slot rejected (23514)",
       !overlap.ok && JSON.stringify(overlap.data ?? overlap.text).includes("23514"),
@@ -410,13 +417,12 @@ async function main() {
     check("non-participant review rejected", !outsiderReview.ok, outsiderReview.text);
 
     const slot2 = iso(48);
-    const s2 = await api(A, "POST", "/rest/v1/sessions", {
-      requester_id: alice.user.id,
-      provider_id: bob.user.id,
-      scheduled_at: slot2,
-      duration_minutes: 45,
-    }, { Prefer: "return=representation" });
-    pendingId = s2.data?.[0]?.id;
+    const s2 = await rpc(A, "propose_session", {
+      p_provider: bob.user.id,
+      p_scheduled_at: slot2,
+      p_duration_minutes: 45,
+    });
+    pendingId = s2.ok ? s2.data : undefined;
     const early = await api(A, "POST", "/rest/v1/reviews", {
       session_id: pendingId,
       reviewer_id: alice.user.id,
@@ -469,6 +475,123 @@ async function main() {
         feedBack.data.some((r) => r.profile_id === bob.user.id), feedBack.text);
   }
 
+  // ---- 8b. Overhaul features: decline, notifications, block, report -------
+  let declinedId;
+  let cancelId;
+  let completeId;
+  console.log("\noverhaul features (decline / notifications / block / report)");
+  {
+    // Decline goes PENDING -> DECLINED (the state machine must accept it).
+    const p = await rpc(A, "propose_session", {
+      p_provider: bob.user.id,
+      p_scheduled_at: iso(72),
+      p_duration_minutes: 30,
+    });
+    declinedId = p.ok ? p.data : undefined;
+    check("proposal created for decline", typeof declinedId === "string", p.text);
+
+    const decline = await rpc(B, "respond_session", {
+      p_session_id: declinedId,
+      p_accept: false,
+      p_reason: "Can't make it",
+    });
+    check("provider can decline (RPC)", decline.ok, decline.text);
+
+    const declined = await api(A, "GET",
+      `/rest/v1/sessions?id=eq.${declinedId}&select=status,decline_reason,responded_at`);
+    const dRow = declined.data?.[0];
+    check("declined status + reason + responded_at stamped",
+      dRow?.status === "DECLINED" && dRow?.decline_reason === "Can't make it" &&
+        Boolean(dRow?.responded_at), declined.text);
+
+    const reRespond = await rpc(B, "respond_session", {
+      p_session_id: declinedId, p_accept: true,
+    });
+    check("cannot re-respond to a decided proposal", !reRespond.ok, reRespond.text);
+
+    const nProvider = await api(B, "GET",
+      `/rest/v1/notifications?session_id=eq.${declinedId}&kind=eq.SESSION_PROPOSED&select=id`);
+    check("provider notified of the proposal",
+      Array.isArray(nProvider.data) && nProvider.data.length === 1, nProvider.text);
+
+    const nRequester = await api(A, "GET",
+      `/rest/v1/notifications?session_id=eq.${declinedId}&kind=eq.SESSION_DECLINED&select=id,read_at`);
+    const nid = nRequester.data?.[0]?.id;
+    check("requester notified of the decline",
+      Array.isArray(nRequester.data) && nRequester.data.length === 1, nRequester.text);
+
+    const tamper = nid
+      ? await api(A, "PATCH", `/rest/v1/notifications?id=eq.${nid}`, { title: "hacked" })
+      : { ok: false };
+    check("notification content cannot be rewritten", !tamper.ok, tamper.text);
+    const markRead = nid
+      ? await api(A, "PATCH", `/rest/v1/notifications?id=eq.${nid}`,
+          { read_at: new Date().toISOString() })
+      : { ok: false };
+    check("notification can be marked read", markRead.ok, markRead.text);
+
+    // cancel_session + complete_session RPCs (the paths the UI uses).
+    const p2 = await rpc(A, "propose_session", {
+      p_provider: bob.user.id, p_scheduled_at: iso(96), p_duration_minutes: 30,
+    });
+    cancelId = p2.ok ? p2.data : undefined;
+    const cancelled = await rpc(A, "cancel_session", { p_session_id: cancelId });
+    check("cancel_session RPC cancels", cancelled.ok, cancelled.text);
+
+    const p3 = await rpc(A, "propose_session", {
+      p_provider: bob.user.id, p_scheduled_at: iso(120), p_duration_minutes: 30,
+    });
+    completeId = p3.ok ? p3.data : undefined;
+    await api(B, "PATCH", `/rest/v1/sessions?id=eq.${completeId}`, { status: "ACCEPTED" });
+    const completed = await rpc(A, "complete_session", { p_session_id: completeId });
+    check("complete_session RPC completes", completed.ok, completed.text);
+    const cRow = await api(A, "GET",
+      `/rest/v1/sessions?id=eq.${completeId}&select=status,completed_at,completed_by`);
+    check("completed_at/completed_by stamped",
+      cRow.data?.[0]?.status === "COMPLETED" &&
+        Boolean(cRow.data?.[0]?.completed_at) &&
+        cRow.data?.[0]?.completed_by === alice.user.id, cRow.text);
+
+    const offered = await rpc(A, "get_member_offered_skills",
+      { p_user_id: bob.user.id });
+    check("get_member_offered_skills returns id+name options",
+      offered.ok && Array.isArray(offered.data) &&
+        offered.data.length > 0 &&
+        offered.data.every((s) => "id" in s && "name" in s), offered.text);
+
+    // Blocking hides the pair both ways in the feed; unblock restores.
+    const block = await api(A, "POST", "/rest/v1/blocks",
+      { blocker_id: alice.user.id, blocked_id: carol.user.id });
+    check("alice can block carol", block.ok, block.text);
+    const feedBlocked = await rpc(A, "get_marketplace_feed", {});
+    check("blocked member hidden from the blocker's feed",
+      Array.isArray(feedBlocked.data) &&
+        !feedBlocked.data.some((r) => r.profile_id === carol.user.id), feedBlocked.text);
+    const unblock = await api(A, "DELETE",
+      `/rest/v1/blocks?blocker_id=eq.${alice.user.id}&blocked_id=eq.${carol.user.id}`);
+    check("alice can unblock carol", unblock.ok, unblock.text);
+
+    // Reports route to the admin queue and resolve.
+    const report = await api(A, "POST", "/rest/v1/reports", {
+      reporter_id: alice.user.id, reported_id: bob.user.id,
+      reason: "E2E report", session_id: declinedId,
+    });
+    check("member can submit a report", report.ok, report.text);
+    const queue = await rpc(A, "get_reports", {});
+    const rep = Array.isArray(queue.data)
+      ? queue.data.find((r) => r.reason === "E2E report")
+      : null;
+    check("admin sees the report", Boolean(rep), queue.text);
+    const nonAdminQueue = await rpc(B, "get_reports", {});
+    check("non-admin sees no reports",
+      Array.isArray(nonAdminQueue.data) && nonAdminQueue.data.length === 0,
+      nonAdminQueue.text);
+    const resolved = rep
+      ? await rpc(A, "resolve_report", { p_report_id: rep.id, p_status: "DISMISSED" })
+      : { ok: false };
+    check("admin can resolve a report", resolved.ok, resolved.text);
+  }
+
   // ---- 9. Authenticated SSR pages ----------------------------------------
   console.log("\napp (authenticated SSR)");
   {
@@ -496,6 +619,28 @@ async function main() {
     const bobSessions = await appGet("/sessions", { cookie: bobCookie });
     check("bob GET /sessions -> 200", bobSessions.status === 200,
       `got ${bobSessions.status}`);
+  }
+
+  // ---- 10. Cleanup: delete the sessions this run created -------------------
+  console.log("\ncleanup");
+  {
+    async function removeSession(id) {
+      if (!id) return { ok: true };
+      let r = await rpc(A, "delete_session", { p_session_id: id });
+      if (!r.ok) {
+        await api(A, "PATCH", `/rest/v1/sessions?id=eq.${id}`, {
+          status: "CANCELLED",
+        });
+        r = await rpc(A, "delete_session", { p_session_id: id });
+      }
+      return r;
+    }
+    const removed = [];
+    for (const id of [sessionId, pendingId, declinedId, cancelId, completeId]) {
+      removed.push(await removeSession(id));
+    }
+    check("created sessions removed", removed.every((r) => r.ok),
+      removed.map((r) => r.text).join(" ").trim());
   }
 
   // ---- summary ------------------------------------------------------------

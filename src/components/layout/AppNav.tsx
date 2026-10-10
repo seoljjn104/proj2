@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Avatar from "@/components/ui/Avatar";
 import BrandMark from "@/components/ui/BrandMark";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 const LINKS = [
   { href: "/marketplace", label: "Marketplace" },
@@ -57,6 +58,7 @@ export default function AppNav() {
               </Link>
             );
           })}
+          {!loading && user && <NotificationBell />}
           {isAdmin && (
             <Link
               href="/admin"

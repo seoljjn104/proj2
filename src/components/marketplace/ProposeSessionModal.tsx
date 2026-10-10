@@ -13,15 +13,36 @@ export interface ProposeTarget {
   name: string | null;
 }
 
+interface SkillOption {
+  id: number;
+  name: string;
+}
+
 interface Props {
   provider: ProposeTarget;
   onClose: () => void;
 }
 
 /**
- * Proposes a PENDING 1:1 session slot. Overlap prevention is
- * enforced by the sessions_no_overlap trigger; its error is mapped
- * to plain language by friendlyDbError().
+ * OFFERED skills for a member as id+name options. Goes through the
+ * get_member_offered_skills RPC because user_skills is own-row RLS and
+ * cannot be read for the other participant directly.
+ */
+async function loadOfferedSkills(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<SkillOption[]> {
+  const { data } = await supabase.rpc("get_member_offered_skills", {
+    p_user_id: userId,
+  });
+  return (data as SkillOption[]) ?? [];
+}
+
+/**
+ * Proposes a PENDING 1:1 session slot through the propose_session RPC,
+ * which owns validation and the state machine. The agreed teach/learn
+ * skills are optional; when set they are validated against both members'
+ * skill lists on the server.
  */
 export default function ProposeSessionModal({ provider, onClose }: Props) {
   const supabase = createClient();
@@ -29,12 +50,16 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
   const { user } = useAuth();
   const [when, setWhen] = useState("");
   const [duration, setDuration] = useState(60);
+  const [message, setMessage] = useState("");
+  const [mySkills, setMySkills] = useState<SkillOption[]>([]);
+  const [theirSkills, setTheirSkills] = useState<SkillOption[]>([]);
+  const [teachId, setTeachId] = useState("");
+  const [learnId, setLearnId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
-  // Lock scroll, move focus in, trap Tab, restore focus on close.
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
     firstFieldRef.current?.focus();
@@ -71,6 +96,18 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
     };
   }, [onClose]);
 
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      const [mine, theirs] = await Promise.all([
+        loadOfferedSkills(supabase, user.id),
+        loadOfferedSkills(supabase, provider.profile_id),
+      ]);
+      setMySkills(mine);
+      setTheirSkills(theirs);
+    })();
+  }, [supabase, user, provider.profile_id]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -80,32 +117,32 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
       return;
     }
     const scheduledAt = new Date(when);
-    if (Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() <= Date.now()) {
+    if (
+      Number.isNaN(scheduledAt.getTime()) ||
+      scheduledAt.getTime() <= Date.now()
+    ) {
       setError("The proposed time must be in the future.");
       return;
     }
 
     setBusy(true);
-    const { data, error: insertError } = await supabase
-      .from("sessions")
-      .insert({
-        requester_id: user.id,
-        provider_id: provider.profile_id,
-        status: "PENDING",
-        scheduled_at: scheduledAt.toISOString(),
-        duration_minutes: duration,
-      })
-      .select("id")
-      .single();
+    const { data, error: rpcError } = await supabase.rpc("propose_session", {
+      p_provider: provider.profile_id,
+      p_scheduled_at: scheduledAt.toISOString(),
+      p_duration_minutes: duration,
+      p_teach_tag_id: teachId ? Number(teachId) : null,
+      p_learn_tag_id: learnId ? Number(learnId) : null,
+      p_message: message.trim() ? message.trim() : null,
+    });
     setBusy(false);
 
-    if (insertError) {
-      setError(friendlyDbError(insertError.message));
+    if (rpcError) {
+      setError(friendlyDbError(rpcError.message));
       return;
     }
 
     onClose();
-    router.push(`/sessions/${data.id}`);
+    router.push(`/sessions/${data as string}`);
   }
 
   return (
@@ -122,7 +159,7 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
           <h2 className="text-lg font-semibold">Propose a 1:1 session</h2>
           <p className="mt-1 text-sm text-slate-600">
             With <strong>{provider.name ?? "this user"}</strong>. They can accept
-            or decline — you&apos;ll chat in the session room either way.
+            or decline — you&apos;ll get an update either way.
           </p>
 
           <form onSubmit={onSubmit} className="mt-5 space-y-4">
@@ -162,13 +199,87 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
               </select>
             </div>
 
+            {mySkills.length > 0 && (
+              <div>
+                <label
+                  htmlFor="teach"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  You&apos;ll teach (optional)
+                </label>
+                <select
+                  id="teach"
+                  className="input"
+                  value={teachId}
+                  onChange={(e) => setTeachId(e.target.value)}
+                >
+                  <option value="">Not specified</option>
+                  {mySkills.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {theirSkills.length > 0 && (
+              <div>
+                <label
+                  htmlFor="learn"
+                  className="mb-1 block text-sm font-medium"
+                >
+                  They&apos;ll teach you (optional)
+                </label>
+                <select
+                  id="learn"
+                  className="input"
+                  value={learnId}
+                  onChange={(e) => setLearnId(e.target.value)}
+                >
+                  <option value="">Not specified</option>
+                  {theirSkills.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label
+                htmlFor="message"
+                className="mb-1 block text-sm font-medium"
+              >
+                Message (optional)
+              </label>
+              <textarea
+                id="message"
+                className="input min-h-[72px]"
+                maxLength={300}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Say hello and share what you'd like to work on."
+              />
+            </div>
+
             {error && <Alert>{error}</Alert>}
 
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn-secondary flex-1"
+              >
                 Cancel
               </button>
-              <button type="submit" className="btn-primary flex-1" disabled={busy} aria-busy={busy}>
+              <button
+                type="submit"
+                className="btn-primary flex-1"
+                disabled={busy}
+                aria-busy={busy}
+              >
                 {busy ? "Sending…" : "Send proposal"}
               </button>
             </div>

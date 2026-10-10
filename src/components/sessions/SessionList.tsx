@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
+import { actorFor, bucketFor, type SessionBucket } from "@/lib/session";
 import type { ProfileDirectory, Session } from "@/types/database";
 import SessionStatusBadge from "./SessionStatusBadge";
 import Avatar from "@/components/ui/Avatar";
@@ -18,7 +19,7 @@ interface Enriched {
 }
 
 function formatSlot(iso: string | null): string {
-  if (!iso) return "No time scheduled";
+  if (!iso) return "No time chosen yet";
   return new Date(iso).toLocaleString(undefined, {
     weekday: "short",
     month: "short",
@@ -43,7 +44,7 @@ export default function SessionList() {
     const { data, error: queryError } = await supabase
       .from("sessions")
       .select("*")
-      .order("scheduled_at", { ascending: false });
+      .order("created_at", { ascending: false });
     if (queryError) {
       setError(friendlyDbError(queryError.message));
       setRows([]);
@@ -98,27 +99,45 @@ export default function SessionList() {
     );
   }
 
-  const active = rows
-    .filter(
-      (r) =>
-        (r.session.status === "PENDING" || r.session.status === "ACCEPTED") &&
-        r.session.scheduled_at !== null,
-    )
-    .sort((a, b) =>
-      (a.session.scheduled_at ?? "").localeCompare(b.session.scheduled_at ?? ""),
-    );
-  const past = rows.filter((r) => !active.includes(r));
+  const buckets: Record<SessionBucket, Enriched[]> = {
+    incoming: [],
+    outgoing: [],
+    upcoming: [],
+    history: [],
+  };
+  if (user) {
+    for (const row of rows) {
+      const actor = actorFor(
+        user.id,
+        row.session.requester_id,
+        row.session.provider_id,
+      );
+      buckets[bucketFor(row.session.status, actor)].push(row);
+    }
+  }
 
-  function section(title: string, items: Enriched[]) {
+  const byNewest = (a: Enriched, b: Enriched) =>
+    b.session.created_at.localeCompare(a.session.created_at);
+  const bySlot = (a: Enriched, b: Enriched) =>
+    (a.session.scheduled_at ?? "").localeCompare(
+      b.session.scheduled_at ?? "",
+    );
+  buckets.incoming.sort(byNewest);
+  buckets.outgoing.sort(byNewest);
+  buckets.upcoming.sort(bySlot);
+  buckets.history.sort(byNewest);
+
+  function section(title: string, items: Enriched[], hint?: string) {
     if (items.length === 0) return null;
     return (
       <section className="mt-8 first:mt-0">
-        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <h2 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           {title}
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] tabular-nums text-slate-600">
             {items.length}
           </span>
         </h2>
+        {hint && <p className="mb-2 text-sm text-slate-500">{hint}</p>}
         <ul className="space-y-3">
           {items.map(({ session, partnerName, partnerId }) => (
             <li key={session.id}>
@@ -136,6 +155,12 @@ export default function SessionList() {
                       ? "they proposed"
                       : "you proposed"}
                   </p>
+                  {session.status === "PENDING" &&
+                    session.proposal_message && (
+                      <p className="mt-1 line-clamp-1 text-sm text-slate-500">
+                        “{session.proposal_message}”
+                      </p>
+                    )}
                 </div>
                 <SessionStatusBadge status={session.status} />
                 {session.status === "ACCEPTED" && session.meeting_link && (
@@ -153,7 +178,11 @@ export default function SessionList() {
     return (
       <div>
         <Alert>{error}</Alert>
-        <button type="button" className="btn-secondary mt-3" onClick={() => void load()}>
+        <button
+          type="button"
+          className="btn-secondary mt-3"
+          onClick={() => void load()}
+        >
           Try again
         </button>
       </div>
@@ -176,8 +205,14 @@ export default function SessionList() {
 
   return (
     <div>
-      {section("Upcoming", active)}
-      {section("History", past)}
+      {section(
+        "Awaiting your response",
+        buckets.incoming,
+        "People who want to learn from you.",
+      )}
+      {section("Proposals you sent", buckets.outgoing)}
+      {section("Upcoming", buckets.upcoming)}
+      {section("History", buckets.history)}
     </div>
   );
 }

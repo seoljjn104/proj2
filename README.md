@@ -28,7 +28,7 @@ no accounts, free).
 ```bash
 supabase login                       # browser authorization, once
 supabase link --project-ref YOUR_PROJECT_REF   # project ref = URL subdomain
-supabase db push                     # applies all 4 migrations
+supabase db push                     # applies all migrations
 supabase db query -f supabase/seed.sql --linked   # inserts the skill catalog
 ```
 
@@ -38,6 +38,10 @@ supabase db query -f supabase/seed.sql --linked   # inserts the skill catalog
 2. `supabase/migrations/20261006000002_rls_policies.sql` — RLS on every table
 3. `supabase/migrations/20261006000003_functions.sql` — triggers, match RPCs, views, grants
 4. `supabase/migrations/20261006000004_realtime.sql` — realtime publication
+5. `supabase/migrations/20261007000001_advisor_fixes.sql` — Supabase advisor hardening
+6. `supabase/migrations/20261010000001_product_overhaul.sql` — profile onboarding fields, `DECLINED` state, notifications, blocking, reporting, validated session RPCs, filterable feed
+7. `supabase/migrations/20261010000002_session_cleanup.sql` — `delete_session()` (participant removes a closed session)
+8. `supabase/migrations/20261010000003_session_insert_lockdown.sql` — sessions are created only via `propose_session()`
 
 > CLI v2 has no `db seed` subcommand — seeding goes through
 > `db query -f supabase/seed.sql --linked` (shown above), or run the file
@@ -157,6 +161,7 @@ The shared test password is read from `E2E_PASSWORD` (environment) or
 ```bash
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint
+npm test            # unit tests (node --test on src/**/*.test.ts)
 npm run build       # next build
 npm run db:parse    # libpg_query syntax check of all SQL files
 npm run e2e         # end-to-end smoke test (needs supabase start + npm run dev)
@@ -164,14 +169,27 @@ npm run simulate    # full user-flow simulation (SIM_EMAIL + SIM_PASSWORD)
 npx supabase db advisors --linked   # Supabase security/performance advisors
 ```
 
+`npm test` covers the pure business rules in isolation — the session state
+machine (`src/lib/session.ts`), reciprocal matching (`src/lib/matching.ts`),
+and skill-name normalization (`src/lib/skills.ts`).
+
 `npm run e2e` drives the whole product over HTTP: middleware redirects,
 authenticated SSR pages, discovery RPCs, RLS negatives, the session
 lifecycle triggers (overlap, transitions, meeting-link gating), the
 meeting-room edge function (Jitsi URL generation + idempotency), chat,
-reviews and moderation.
+reviews, moderation, and the overhaul features — decline with a reason,
+session/reminder notifications, content-immutability on notifications,
+blocking, the member-report queue and `get_member_offered_skills`.
 Target it at hosted by overriding `APP_URL`, `SUPABASE_URL` and
 `SUPABASE_ANON_KEY` (the test password is read from `E2E_PASSWORD` /
 `.env.local`).
+
+Both `e2e` and `simulate` **clean up after themselves**: they delete the
+sessions they create via `delete_session()` and (for `simulate`) restore the
+account's original bio and remove any skills they added — so no test residue
+is left on a real account. The only row they leave behind is the report they
+submit, resolved to `DISMISSED`; reports are an audit trail with no delete
+policy, and the unique-open index means a re-run inserts a fresh one.
 
 **Advisors baseline:** `db advisors --linked` should report **0 errors**.
 The expected leftovers are informational: warnings for the intentional
@@ -192,10 +210,12 @@ A matches B  ⟺  A.OFFERED = B.WANTED  ∧  A.WANTED = B.OFFERED
 ```
 
 Tag names compare case-insensitively (`lower()` both sides; a unique index
-on `lower(skill_tags.name)` keeps the catalog clean). Flagged profiles are
-excluded. `public.get_marketplace_feed(p_search, p_limit)` returns every
-profile with its two tag arrays plus an `is_direct_match` flag computed
-against the caller.
+on `lower(skill_tags.name)` keeps the catalog clean). Flagged profiles and
+blocked pairs are excluded. `public.get_marketplace_feed(p_search, p_offered,
+p_wanted, p_only_direct, p_format, p_limit, p_offset)` returns every
+matching profile with its two tag arrays plus an `is_direct_match` flag
+computed against the caller; `p_format` filters on the member's preferred
+`ONLINE` / `IN_PERSON` / `EITHER` format.
 
 ### RLS model (strict own-row, discovery via RPCs)
 
@@ -204,9 +224,12 @@ against the caller.
 | `profiles` | own row (direct); others only through `get_profile_directory()` / feed RPCs | own row; moderation fields admin-only (trigger) |
 | `skill_tags` | any signed-in user | nobody via API (`add_skill_tag()` RPC only) |
 | `user_skills` | own row | own row |
-| `sessions` | the two participants | participants; status transitions enforced by trigger |
+| `sessions` | the two participants | participants; **INSERT only via `propose_session()` RPC**, status transitions enforced by trigger |
 | `messages` | session participants | participants, as themselves |
 | `reviews` | participants of the session | reviewer; `COMPLETED` + participant checks via trigger |
+| `notifications` | own row | own row (mark read / delete); rows are created by SECURITY DEFINER triggers |
+| `blocks` | own rows (as blocker) | own rows |
+| `reports` | own rows (as reporter) | own rows; readable by admins through `get_reports()` |
 | `allowed_email_domains` | nobody (deny-all) | SQL only |
 
 Trigger-enforced business rules (`20261006000003_functions.sql`):
@@ -217,6 +240,14 @@ Trigger-enforced business rules (`20261006000003_functions.sql`):
 - `protect_moderation_fields` — only admins can change `is_admin` / `flagged` / `flag_reason`
 - `enforce_email_domain` — allowlist gate on `auth.users` insert
 - `handle_new_user` — creates `public.profiles` on signup
+
+Notifications & safety rules (`20261010000001_product_overhaul.sql`):
+
+- `notify_session_change` — writes one `SESSION_PROPOSED` / `_ACCEPTED` / `_DECLINED` / `_CANCELLED` / `_COMPLETED` notification per recipient per session (idempotent via a partial unique index)
+- `notify_review` — writes one `REVIEW_RECEIVED` notification when a review is left
+- `propose_session` / `respond_session` / `cancel_session` / `complete_session` — the validated, `SECURITY DEFINER` state-machine RPCs the app calls (the backend owns validation: blocked pairs, flagged providers, future scheduling, duration bounds, and the agreed teach/learn skills)
+- `delete_session` — a participant may permanently remove one of their own **closed** sessions (cascades to messages/reviews/notifications) (`20261010000002_session_cleanup.sql`)
+- `sessions_insert_requester` policy was dropped (`20261010000003_session_insert_lockdown.sql`) so sessions can only be created by `propose_session()`
 
 `20261007000001_advisor_fixes.sql` hardens the surface for Supabase
 Advisors: the `profile_directory` / `admin_user_flags` views became
@@ -232,11 +263,20 @@ one re-checks `auth.uid()`/admin status internally.
 ### Session lifecycle
 
 ```
-PENDING ──(provider accepts, Jitsi room created)──▶ ACCEPTED
-   │                                                  │
-   ├─(either cancels)──▶ CANCELLED◀──(either)────────┤
-   └─────────────────────────────────────(either)────▶ COMPLETED ──▶ reviews unlock
+                        ┌─(provider declines)────────────────▶ DECLINED   ┐
+PENDING ────────────────┤                                                  ├─ terminal
+   │                    └─(either cancels)───────────────▶ CANCELLED       ┘
+   │
+   └─(provider accepts, Jitsi room created)──▶ ACCEPTED ─┬─(either)────▶ COMPLETED ──▶ reviews unlock
+                                                         └─(either cancels)─▶ CANCELLED
 ```
+
+`DECLINED`, `COMPLETED`, and `CANCELLED` are terminal. Declining is distinct
+from cancelling (it carries an optional `decline_reason`). A closed session
+can be permanently removed from history by either participant via
+`delete_session()`; an active one must be cancelled instead. Every transition
+routes through the RPCs above, so direct REST writes can no longer skip the
+rules.
 
 ### Realtime
 
@@ -253,9 +293,10 @@ meeting link); RLS decides what each subscriber actually receives.
 | `/login`, `/signup`, `/auth/callback` | Email auth + verification exchange |
 | `/marketplace` | Marketplace feed with Direct Match badges |
 | `/matches` | Reciprocal Matching Hub |
-| `/sessions`, `/sessions/[id]` | Session list, lifecycle actions, realtime chat, reviews |
-| `/profile` | Profile details + OFFERED/WANTED skill manager |
-| `/admin` | Flag/unflag moderation board (admins only) |
+| `/sessions`, `/sessions/[id]` | Session list (incoming/outgoing/upcoming/history), lifecycle actions, realtime chat, reviews, report/block |
+| `/notifications` | In-app notifications with unread count |
+| `/profile` | Profile details + OFFERED/WANTED skill manager + blocked members |
+| `/admin` | Member reports queue + flag/unflag board (admins only) |
 
 ---
 

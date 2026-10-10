@@ -3,20 +3,35 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
-import type { MarketplaceProfile } from "@/types/database";
+import type { MarketplaceProfile, SessionFormat } from "@/types/database";
 import ProfileCard from "./ProfileCard";
 import ProposeSessionModal from "./ProposeSessionModal";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
 
+interface Filters {
+  search: string;
+  offered: string;
+  wanted: string;
+  format: SessionFormat | "";
+}
+
+const EMPTY_FILTERS: Filters = {
+  search: "",
+  offered: "",
+  wanted: "",
+  format: "",
+};
+
 /**
  * Marketplace Feed — renders public profile cards from the
- * get_marketplace_feed() RPC, with the Direct Match badge for
- * reciprocal fits against the current user.
+ * block-aware, filterable get_marketplace_feed() RPC. The Direct Match
+ * filter runs on the client so its count stays accurate while other
+ * filters are applied.
  */
 export default function MarketplaceFeed() {
   const supabase = createClient();
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [profiles, setProfiles] = useState<MarketplaceProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,12 +40,18 @@ export default function MarketplaceFeed() {
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
-    async (q: string) => {
+    async (f: Filters) => {
       setLoading(true);
       setError(null);
       const { data, error: rpcError } = await supabase.rpc(
         "get_marketplace_feed",
-        { p_search: q || null, p_limit: 60 },
+        {
+          p_search: f.search || null,
+          p_offered: f.offered || null,
+          p_wanted: f.wanted || null,
+          p_format: f.format || null,
+          p_limit: 60,
+        },
       );
       if (rpcError) {
         setError(friendlyDbError(rpcError.message));
@@ -44,19 +65,38 @@ export default function MarketplaceFeed() {
   );
 
   useEffect(() => {
-    void load("");
+    void load(EMPTY_FILTERS);
   }, [load]);
 
-  function onSearch(value: string) {
-    setSearch(value);
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => void load(value), 300);
+  function update<K extends keyof Filters>(key: K, value: Filters[K]) {
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      if (key === "search") {
+        if (debounce.current) clearTimeout(debounce.current);
+        debounce.current = setTimeout(() => void load(next), 300);
+      } else {
+        void load(next);
+      }
+      return next;
+    });
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    setOnlyDirect(false);
+    void load(EMPTY_FILTERS);
   }
 
   const visible = onlyDirect
     ? profiles.filter((p) => p.is_direct_match)
     : profiles;
   const directCount = profiles.filter((p) => p.is_direct_match).length;
+  const hasFilters =
+    filters.search !== "" ||
+    filters.offered !== "" ||
+    filters.wanted !== "" ||
+    filters.format !== "" ||
+    onlyDirect;
 
   return (
     <div>
@@ -70,49 +110,128 @@ export default function MarketplaceFeed() {
           </p>
         </div>
 
-        <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <svg
-              aria-hidden
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-              viewBox="0 0 16 16"
-            >
-              <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              <path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-            <input
-              type="search"
-              className="input pl-9"
-              placeholder="Search skills or names"
-              value={search}
-              onChange={(e) => onSearch(e.target.value)}
-              aria-label="Search marketplace"
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setOnlyDirect((v) => !v)}
-            aria-pressed={onlyDirect}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-              onlyDirect
-                ? "border-amber-300 bg-amber-50 text-amber-800"
-                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+        <button
+          type="button"
+          onClick={() => setOnlyDirect((v) => !v)}
+          aria-pressed={onlyDirect}
+          className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+            onlyDirect
+              ? "border-amber-300 bg-amber-50 text-amber-800"
+              : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`h-2 w-2 rounded-full ${
+              onlyDirect ? "bg-amber-500" : "bg-slate-300"
             }`}
-          >
-            <span
-              aria-hidden
-              className={`h-2 w-2 rounded-full ${
-                onlyDirect ? "bg-amber-500" : "bg-slate-300"
-              }`}
-            />
-            Direct matches
-            {directCount > 0 && (
-              <span className="tabular-nums font-semibold">{directCount}</span>
-            )}
-          </button>
-        </div>
+          />
+          Direct matches
+          {directCount > 0 && (
+            <span className="font-semibold tabular-nums">{directCount}</span>
+          )}
+        </button>
       </div>
+
+      <form
+        className="mt-5 flex flex-wrap items-end gap-3"
+        onSubmit={(e) => e.preventDefault()}
+        role="search"
+        aria-label="Filter marketplace"
+      >
+        <div className="relative w-full sm:w-64">
+          <svg
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            viewBox="0 0 16 16"
+          >
+            <circle
+              cx="7"
+              cy="7"
+              r="4.5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            />
+            <path
+              d="M10.5 10.5 14 14"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+          </svg>
+          <input
+            type="search"
+            className="input pl-9"
+            placeholder="Search skills or names"
+            value={filters.search}
+            onChange={(e) => update("search", e.target.value)}
+            aria-label="Search marketplace"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="filter-offered"
+            className="mb-1 block text-xs font-medium text-slate-500"
+          >
+            They teach
+          </label>
+          <input
+            id="filter-offered"
+            type="text"
+            className="input w-40"
+            placeholder="e.g. Guitar"
+            value={filters.offered}
+            onChange={(e) => update("offered", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="filter-wanted"
+            className="mb-1 block text-xs font-medium text-slate-500"
+          >
+            They want
+          </label>
+          <input
+            id="filter-wanted"
+            type="text"
+            className="input w-40"
+            placeholder="e.g. Spanish"
+            value={filters.wanted}
+            onChange={(e) => update("wanted", e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="filter-format"
+            className="mb-1 block text-xs font-medium text-slate-500"
+          >
+            Format
+          </label>
+          <select
+            id="filter-format"
+            className="input w-36"
+            value={filters.format}
+            onChange={(e) =>
+              update("format", e.target.value as Filters["format"])
+            }
+          >
+            <option value="">Any</option>
+            <option value="ONLINE">Online</option>
+            <option value="IN_PERSON">In person</option>
+            <option value="EITHER">Either</option>
+          </select>
+        </div>
+
+        {hasFilters && (
+          <button type="button" className="btn-secondary" onClick={clearFilters}>
+            Clear filters
+          </button>
+        )}
+      </form>
 
       {error && (
         <div className="mt-6">
@@ -120,7 +239,7 @@ export default function MarketplaceFeed() {
           <button
             type="button"
             className="btn-secondary mt-3"
-            onClick={() => void load(search)}
+            onClick={() => void load(filters)}
           >
             Try again
           </button>
@@ -140,14 +259,21 @@ export default function MarketplaceFeed() {
         <div className="mt-8">
           <EmptyState
             title={
-              search
-                ? `No profiles match “${search}”`
+              hasFilters
+                ? "No profiles match these filters"
                 : "No profiles yet — be the first to add your skills"
             }
             body={
-              search
-                ? undefined
+              hasFilters
+                ? "Try removing a filter or searching for a different skill."
                 : "Head to your profile to list OFFERED and WANTED skills so the grid can pair you."
+            }
+            action={
+              hasFilters ? (
+                <button type="button" className="btn-secondary" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              ) : undefined
             }
           />
         </div>

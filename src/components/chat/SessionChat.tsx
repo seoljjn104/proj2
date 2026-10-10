@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +18,7 @@ import SessionActions from "@/components/sessions/SessionActions";
 import SessionStatusBadge from "@/components/sessions/SessionStatusBadge";
 import ReviewSection from "@/components/sessions/ReviewSection";
 import MeetingRoom from "@/components/sessions/MeetingRoom";
+import SafetyMenu from "@/components/moderation/SafetyMenu";
 import Alert from "@/components/ui/Alert";
 
 interface Props {
@@ -49,6 +51,7 @@ function roomNameFromLink(link: string): string {
  */
 export default function SessionChat({ sessionId }: Props) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const { user, profile, loading: authLoading } = useAuth();
 
   const [session, setSession] = useState<Session | null>(null);
@@ -208,6 +211,7 @@ export default function SessionChat({ sessionId }: Props) {
 
   const isRequester = session.requester_id === user.id;
   const partnerName = partner?.name ?? "The other participant";
+  const partnerId = isRequester ? session.provider_id : session.requester_id;
 
   return (
     <div className="space-y-6">
@@ -228,23 +232,33 @@ export default function SessionChat({ sessionId }: Props) {
                 </h1>
                 <SessionStatusBadge status={session.status} />
               </div>
-            <p className="mt-1 text-sm text-slate-600">
-              {isRequester ? "You proposed" : `${partnerName} proposed`} ·{" "}
-              {formatSlot(session.scheduled_at)} ·{" "}
-              {session.duration_minutes} min
-            </p>
-            <p className="mt-0.5 text-xs text-slate-500">
-              You are the <strong>{isRequester ? "requester" : "provider"}</strong>{" "}
-              of this 1:1 exchange.
-            </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {isRequester ? "You proposed" : `${partnerName} proposed`} ·{" "}
+                {formatSlot(session.scheduled_at)} ·{" "}
+                {session.duration_minutes} min
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                You are the{" "}
+                <strong>{isRequester ? "requester" : "provider"}</strong> of this
+                1:1 exchange.
+              </p>
+            </div>
+            <SafetyMenu
+              targetId={partnerId}
+              targetName={partnerName}
+              sessionId={session.id}
+            />
+          </div>
+
+          <div className="mt-4">
+            <SessionActions
+              session={session}
+              onUpdate={setSession}
+              onDeleted={() => router.push("/sessions")}
+            />
           </div>
         </div>
-
-        <div className="mt-4">
-          <SessionActions session={session} onUpdate={setSession} />
-        </div>
       </div>
-    </div>
 
       {/* Embedded 1:1 video call (Jitsi Meet, in-app) */}
       {session.status === "ACCEPTED" && session.meeting_link && (

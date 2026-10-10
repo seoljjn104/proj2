@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "node --test \"src/**/*.test.ts\"",
     "db:parse": "node scripts/parse-sql.mjs",
     "e2e": "node scripts/e2e.mjs",
     "simulate": "node scripts/simulate.mjs"

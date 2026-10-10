@@ -8,6 +8,12 @@ interface Props {
   onPropose: (profile: MarketplaceProfile) => void;
 }
 
+const FORMAT_LABEL: Record<MarketplaceProfile["session_format"], string> = {
+  ONLINE: "Online",
+  IN_PERSON: "In person",
+  EITHER: "Online or in person",
+};
+
 export default function ProfileCard({ profile, onPropose }: Props) {
   return (
     <div className="card card-interactive relative flex flex-col gap-4">
@@ -33,11 +39,21 @@ export default function ProfileCard({ profile, onPropose }: Props) {
           <h2 className="truncate font-semibold text-slate-900">
             {profile.name ?? "Unnamed user"}
           </h2>
-          <p className="line-clamp-3 text-sm text-slate-600">
+          {profile.headline ? (
+            <p className="mt-0.5 line-clamp-2 text-sm font-medium text-slate-700">
+              {profile.headline}
+            </p>
+          ) : null}
+          <p className="mt-0.5 line-clamp-3 text-sm text-slate-600">
             {profile.bio || "No bio yet."}
           </p>
         </div>
       </div>
+
+      <p className="text-xs text-slate-500">
+        <span className="font-medium text-slate-600">Format:</span>{" "}
+        {FORMAT_LABEL[profile.session_format]}
+      </p>
 
       <div className="space-y-2">
         <div>

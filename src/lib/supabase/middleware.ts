@@ -5,6 +5,7 @@ const PROTECTED_PREFIXES = [
   "/marketplace",
   "/matches",
   "/sessions",
+  "/notifications",
   "/profile",
   "/admin",
 ];

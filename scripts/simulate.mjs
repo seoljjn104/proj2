@@ -203,8 +203,17 @@ async function main() {
   }
 
   // ---- 5. Profile + skills setup ------------------------------------------
+  // Everything this script changes on the real account is recorded here so
+  // the cleanup step can undo it exactly.
   console.log("\nprofile + skills");
+  let originalBio = null;
+  let addedSkills = [];
+  let sessionId;
   {
+    const before = await api(S, "GET",
+      `/rest/v1/profiles?id=eq.${me.id}&select=bio`);
+    originalBio = Array.isArray(before.data) ? (before.data[0]?.bio ?? null) : null;
+
     const bio = "Testing the SkillGRID flow (simulation run).";
     const upd = await api(S, "PATCH", `/rest/v1/profiles?id=eq.${me.id}`, { bio },
       { Prefer: "return=representation" });
@@ -223,6 +232,7 @@ async function main() {
       const ins = await api(S, "POST", "/rest/v1/user_skills",
         wanted.map(([tag, type]) => ({ user_id: me.id, tag_id: tag, type })));
       check("add OFFERED=Next.js, WANTED=Guitar", ins.ok, ins.text);
+      if (ins.ok) addedSkills = wanted;
     } else {
       check("skills already present (re-run)", true);
     }
@@ -247,17 +257,15 @@ async function main() {
 
   // ---- 7. Session lifecycle ------------------------------------------------
   console.log("\nsession lifecycle");
-  let sessionId;
   {
-    const created = await api(S, "POST", "/rest/v1/sessions", {
-      requester_id: me.id,
-      provider_id: partnerId,
-      scheduled_at: iso(72),
-      duration_minutes: 60,
-    }, { Prefer: "return=representation" });
-    check("propose session -> PENDING",
-      created.ok && created.data?.[0]?.status === "PENDING", created.text);
-    sessionId = created.data?.[0]?.id;
+    const created = await rpc(S, "propose_session", {
+      p_provider: partnerId,
+      p_scheduled_at: iso(72),
+      p_duration_minutes: 60,
+    });
+    check("propose session -> PENDING (RPC)",
+      created.ok && typeof created.data === "string", created.text);
+    sessionId = created.ok ? created.data : undefined;
 
     const accepted = await api(P, "PATCH", `/rest/v1/sessions?id=eq.${sessionId}`,
       { status: "ACCEPTED" }, { Prefer: "return=representation" });
@@ -323,6 +331,22 @@ async function main() {
     check("admin RPC returns zero rows for regular user",
       adminView.ok && Array.isArray(adminView.data) && adminView.data.length === 0,
       adminView.text);
+  }
+
+  // ---- 11. Cleanup: leave the real account exactly as we found it ----------
+  console.log("\ncleanup");
+  {
+    if (sessionId) {
+      const removed = await rpc(S, "delete_session", { p_session_id: sessionId });
+      check("test session removed from history", removed.ok, removed.text);
+    }
+    for (const [tag, type] of addedSkills) {
+      await api(S, "DELETE",
+        `/rest/v1/user_skills?tag_id=eq.${tag}&type=eq.${type}`);
+    }
+    const restore = await api(S, "PATCH",
+      `/rest/v1/profiles?id=eq.${me.id}`, { bio: originalBio });
+    check("profile bio restored", restore.ok, restore.text);
   }
 
   console.log(`\n${passed} passed, ${failures.length} failed`);

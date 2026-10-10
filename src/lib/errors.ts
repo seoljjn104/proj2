@@ -14,6 +14,55 @@ const DB_MESSAGES: [(message: string) => boolean, string][] = [
     "Only the provider can accept this proposal.",
   ],
   [
+    (m) => m.includes("Only the provider can decline"),
+    "Only the provider can respond to this proposal.",
+  ],
+  [
+    (m) => m.includes("no longer awaiting your response"),
+    "This proposal was already answered or withdrawn.",
+  ],
+  [
+    (m) => m.includes("can no longer be cancelled"),
+    "This session can no longer be cancelled.",
+  ],
+  [
+    (m) => m.includes("not ready to be completed"),
+    "Only an accepted session can be marked complete.",
+  ],
+  [
+    (m) => m.includes("Choose a time in the future"),
+    "Pick a time in the future.",
+  ],
+  [
+    (m) => m.includes("Duration must be between"),
+    "Pick a duration between 15 and 480 minutes.",
+  ],
+  [
+    (m) => m.includes("cannot propose a session with this member"),
+    "You can't propose a session with this member.",
+  ],
+  [
+    (m) => m.includes("not available for proposals"),
+    "That member isn't available for new proposals.",
+  ],
+  [
+    (m) => m.includes("You can only offer to teach"),
+    "Pick a skill from your own teaching list.",
+  ],
+  [
+    (m) => m.includes("does not offer that skill"),
+    "Your partner doesn't offer that skill.",
+  ],
+  [
+    (m) => m.includes("Choose another member"),
+    "Pick another member to propose to.",
+  ],
+  [
+    (m) => m.includes("closed sessions can be removed") ||
+      m.includes("can be removed"),
+    "Only closed sessions can be removed.",
+  ],
+  [
     (m) => m.includes("terminal") || m.includes("cannot change status"),
     "This session is already closed.",
   ],
