@@ -18,6 +18,13 @@ interface Enriched {
   partnerId: string;
 }
 
+interface Stat {
+  label: string;
+  value: number;
+  dot: string;
+  ring: string;
+}
+
 function formatSlot(iso: string | null): string {
   if (!iso) return "No time chosen yet";
   return new Date(iso).toLocaleString(undefined, {
@@ -27,6 +34,54 @@ function formatSlot(iso: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+/** One-line glanceable summary of your pipeline: who is waiting on you. */
+function StatsStrip({ incoming, upcoming, completed }: {
+  incoming: number;
+  upcoming: number;
+  completed: number;
+}) {
+  const stats: Stat[] = [
+    {
+      label: "Awaiting you",
+      value: incoming,
+      dot: "bg-amber-500",
+      ring: "ring-amber-100",
+    },
+    {
+      label: "Upcoming",
+      value: upcoming,
+      dot: "bg-teal-500",
+      ring: "ring-teal-100",
+    },
+    {
+      label: "Completed",
+      value: completed,
+      dot: "bg-sky-500",
+      ring: "ring-sky-100",
+    },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {stats.map((s) => (
+        <div
+          key={s.label}
+          className={`card flex items-center gap-3 py-3 ring-1 ${s.ring}`}
+        >
+          <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
+          <div className="min-w-0">
+            <p className="text-lg font-semibold leading-none tabular-nums text-slate-900">
+              {s.value}
+            </p>
+            <p className="mt-0.5 truncate text-xs font-medium text-slate-500">
+              {s.label}
+            </p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export default function SessionList() {
@@ -127,11 +182,21 @@ export default function SessionList() {
   buckets.upcoming.sort(bySlot);
   buckets.history.sort(byNewest);
 
-  function section(title: string, items: Enriched[], hint?: string) {
+  const completedCount = buckets.history.filter(
+    ({ session }) => session.status === "COMPLETED",
+  ).length;
+
+  function section(
+    title: string,
+    items: Enriched[],
+    dotClass: string,
+    hint?: string,
+  ) {
     if (items.length === 0) return null;
     return (
       <section className="mt-8 first:mt-0">
         <h2 className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
           {title}
           <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] tabular-nums text-slate-600">
             {items.length}
@@ -143,29 +208,67 @@ export default function SessionList() {
             <li key={session.id}>
               <Link
                 href={`/sessions/${session.id}`}
-                className="card card-interactive flex flex-wrap items-center gap-4"
+                className="card card-interactive group flex flex-wrap items-center gap-4"
               >
                 <Avatar name={partnerName} size="md" />
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-slate-900">{partnerName}</p>
-                  <p className="text-sm text-slate-600">
-                    {formatSlot(session.scheduled_at)} ·{" "}
-                    {session.duration_minutes} min ·{" "}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium text-slate-900">{partnerName}</p>
+                    {session.meeting_link && session.status === "ACCEPTED" && (
+                      <span className="badge-direct">
+                        <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">
+                          <path
+                            d="M1 4.5h8.5a1 1 0 011 1v3a1 1 0 01-1 1H4M6.5 4.5L7.5 8M2.5 8.5l1 1a1 1 0 001-1V5.5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        Link ready
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-sm text-slate-600">
+                    <span className="font-medium text-slate-700">
+                      {formatSlot(session.scheduled_at)}
+                    </span>
+                    <span aria-hidden className="mx-1.5 text-slate-300">
+                      ·
+                    </span>
+                    {session.duration_minutes} min
+                    <span aria-hidden className="mx-1.5 text-slate-300">
+                      ·
+                    </span>
                     {session.requester_id === partnerId
                       ? "they proposed"
                       : "you proposed"}
                   </p>
                   {session.status === "PENDING" &&
                     session.proposal_message && (
-                      <p className="mt-1 line-clamp-1 text-sm text-slate-500">
-                        “{session.proposal_message}”
+                      <p className="mt-1.5 line-clamp-1 text-sm text-slate-500">
+                        {session.proposal_message}
                       </p>
                     )}
                 </div>
-                <SessionStatusBadge status={session.status} />
-                {session.status === "ACCEPTED" && session.meeting_link && (
-                  <span className="badge-direct">Link ready</span>
-                )}
+                <div className="flex items-center gap-3">
+                  <SessionStatusBadge status={session.status} />
+                  <svg
+                    aria-hidden
+                    className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                  >
+                    <path
+                      d="M6 4l4 4-4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
               </Link>
             </li>
           ))}
@@ -205,14 +308,21 @@ export default function SessionList() {
 
   return (
     <div>
+      <StatsStrip
+        incoming={buckets.incoming.length}
+        upcoming={buckets.upcoming.length}
+        completed={completedCount}
+      />
+
       {section(
         "Awaiting your response",
         buckets.incoming,
+        "bg-amber-500",
         "People who want to learn from you.",
       )}
-      {section("Proposals you sent", buckets.outgoing)}
-      {section("Upcoming", buckets.upcoming)}
-      {section("History", buckets.history)}
+      {section("Proposals you sent", buckets.outgoing, "bg-sky-500")}
+      {section("Upcoming", buckets.upcoming, "bg-teal-500")}
+      {section("History", buckets.history, "bg-slate-400")}
     </div>
   );
 }

@@ -84,7 +84,7 @@ export default function ProfileForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <label htmlFor="profile-name" className="mb-1 block text-sm font-medium">
+        <label htmlFor="profile-name" className="mb-1 block text-sm font-medium text-slate-700">
           Display name
         </label>
         {loading ? (
@@ -104,7 +104,7 @@ export default function ProfileForm() {
       <div>
         <label
           htmlFor="profile-headline"
-          className="mb-1 block text-sm font-medium"
+          className="mb-1 block text-sm font-medium text-slate-700"
         >
           Headline
         </label>
@@ -129,7 +129,7 @@ export default function ProfileForm() {
       </div>
 
       <div>
-        <label htmlFor="profile-bio" className="mb-1 block text-sm font-medium">
+        <label htmlFor="profile-bio" className="mb-1 block text-sm font-medium text-slate-700">
           Bio
         </label>
         {loading ? (
@@ -150,7 +150,7 @@ export default function ProfileForm() {
         <div>
           <label
             htmlFor="profile-timezone"
-            className="mb-1 block text-sm font-medium"
+            className="mb-1 block text-sm font-medium text-slate-700"
           >
             Timezone
           </label>
@@ -173,7 +173,7 @@ export default function ProfileForm() {
         <div>
           <label
             htmlFor="profile-format"
-            className="mb-1 block text-sm font-medium"
+            className="mb-1 block text-sm font-medium text-slate-700"
           >
             Preferred format
           </label>
@@ -195,7 +195,7 @@ export default function ProfileForm() {
       <div>
         <label
           htmlFor="profile-availability"
-          className="mb-1 block text-sm font-medium"
+          className="mb-1 block text-sm font-medium text-slate-700"
         >
           Availability
         </label>

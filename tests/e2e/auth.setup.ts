@@ -12,7 +12,7 @@ setup("sign in as the admin test user", async ({ page }) => {
   setup.skip(!password, "E2E_PASSWORD is not set (environment or .env.local)");
 
   await page.goto("/");
-  await page.locator("header").getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in" }).click();
   const dialog = page.getByRole("dialog", { name: "Sign in" });
   await dialog.locator("#email").fill(ACCOUNTS.admin);
   await dialog.locator("#password").fill(password);

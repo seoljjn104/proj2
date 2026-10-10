@@ -10,6 +10,7 @@ import MatchCard from "./MatchCard";
 import ProposeSessionModal, {
   type ProposeTarget,
 } from "@/components/marketplace/ProposeSessionModal";
+import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -53,28 +54,21 @@ export default function MatchingHub() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-        <div className="max-w-2xl">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
-            Matching Hub
-          </h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-            People where you can teach something they want{" "}
-            <em className="font-semibold not-italic text-slate-700">and</em>{" "}
-            learn something they offer — a true two-way exchange.
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {!loading && !error && matches.length > 0 && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold tabular-nums text-teal-800">
-              {matches.length} match{matches.length === 1 ? "" : "es"}
-            </span>
-          )}
+      <PageHeader
+        eyebrow="Two-way exchange"
+        title="Matching Hub"
+        subtitle="People where you can teach something they want and learn something they offer — a true swap."
+        count={
+          !loading && !error && matches.length > 0
+            ? `${matches.length} match${matches.length === 1 ? "" : "es"}`
+            : undefined
+        }
+        action={
           <Link href="/profile" className="btn-secondary">
             Update my skills
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
         <div className="mt-6">

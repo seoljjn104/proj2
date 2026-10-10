@@ -8,8 +8,9 @@ export default function SessionsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="1:1 exchanges"
         title="Sessions"
-        subtitle="Your proposed and accepted 1:1 exchanges, with the video call when the time comes."
+        subtitle="Proposals waiting on you, upcoming slots, and history across your exchanges."
       />
       <div className="mt-6">
         <SessionList />

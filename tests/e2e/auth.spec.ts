@@ -9,7 +9,7 @@ test.describe("auth popups on the landing page", () => {
     page,
   }) => {
     await page.goto("/");
-    const trigger = page.locator("header").getByRole("button", { name: "Sign in" });
+    const trigger = page.getByRole("button", { name: "Sign in" });
     await trigger.click();
 
     const dialog = page.getByRole("dialog", { name: "Sign in" });
@@ -50,7 +50,7 @@ test.describe("auth popups on the landing page", () => {
     page,
   }) => {
     await page.goto("/");
-    await page.locator("header").getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in" }).click();
 
     const login = page.getByRole("dialog", { name: "Sign in" });
     await login.getByRole("button", { name: "Create your account" }).click();
@@ -95,6 +95,9 @@ test.describe("signing out", () => {
     await expect(page.getByRole("heading", { name: "Marketplace" })).toBeVisible();
 
     await page.locator("aside").getByRole("button", { name: "Sign out" }).click();
+    const confirm = page.getByRole("alertdialog", { name: "Sign out" });
+    await expect(confirm).toBeVisible();
+    await confirm.getByRole("button", { name: "Sign out", exact: true }).click();
     await page.waitForURL("http://localhost:3000/");
     await page.screenshot({ path: "test-results/signed-out-home.png" });
 

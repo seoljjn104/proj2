@@ -31,6 +31,10 @@ export async function GET(request: Request) {
       type,
     });
     if (!error) {
+      // Password recovery lands on a dedicated form to choose a new password.
+      if (type === "recovery") {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

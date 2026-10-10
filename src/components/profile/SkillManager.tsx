@@ -154,10 +154,22 @@ export default function SkillManager() {
     return (
       <div className="card">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-slate-900">
+          <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+            <span
+              aria-hidden
+              className={`h-1.5 w-1.5 rounded-full ${
+                type === "OFFERED" ? "bg-emerald-500" : "bg-sky-500"
+              }`}
+            />
             {type === "OFFERED" ? "I can teach" : "I want to learn"}
           </h3>
-          <span className="text-xs font-medium text-slate-500">
+          <span
+            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+              type === "OFFERED"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-sky-50 text-sky-700"
+            }`}
+          >
             {type === "OFFERED" ? "OFFERED" : "WANTED"} · {items.length}
           </span>
         </div>

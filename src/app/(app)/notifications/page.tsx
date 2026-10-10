@@ -8,6 +8,7 @@ export default function NotificationsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="Alerts"
         title="Notifications"
         subtitle="Proposals, responses, and completed sessions."
       />

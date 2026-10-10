@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Avatar from "@/components/ui/Avatar";
 import BrandMark from "@/components/ui/BrandMark";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import NavItem from "@/components/layout/NavItem";
 import NotificationBell from "@/components/layout/NotificationBell";
 import {
@@ -51,6 +52,7 @@ export default function AppNav() {
   const pathname = usePathname();
   const { user, profile, isAdmin, signOut, loading } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -111,6 +113,11 @@ export default function AppNav() {
   async function handleSignOut() {
     setSigningOut(true);
     await signOut();
+  }
+
+  function requestSignOut(onNavigate?: () => void) {
+    onNavigate?.();
+    setConfirmOpen(true);
   }
 
   function navLinks(onNavigate?: () => void) {
@@ -175,10 +182,7 @@ export default function AppNav() {
         </div>
         <button
           type="button"
-          onClick={() => {
-            onNavigate?.();
-            void handleSignOut();
-          }}
+          onClick={() => requestSignOut(onNavigate)}
           className="btn-secondary w-full"
           disabled={signingOut}
           aria-busy={signingOut}
@@ -267,7 +271,7 @@ export default function AppNav() {
           {!loading && user && (
             <button
               type="button"
-              onClick={() => void handleSignOut()}
+              onClick={() => requestSignOut()}
               aria-label="Sign out"
               title={collapsed ? "Sign out" : undefined}
               className={
@@ -346,6 +350,18 @@ export default function AppNav() {
             </div>
           </div>
         </div>
+      )}
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Sign out"
+          message="Are you sure you want to sign out of SkillGRID? You can sign back in anytime."
+          confirmLabel="Sign out"
+          busyLabel="Signing out…"
+          busy={signingOut}
+          onConfirm={() => void handleSignOut()}
+          onCancel={() => setConfirmOpen(false)}
+        />
       )}
     </>
   );

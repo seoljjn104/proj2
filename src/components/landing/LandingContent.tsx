@@ -181,26 +181,10 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
         className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-gradient-to-b from-teal-50/60 via-transparent to-transparent"
       />
 
-      <header className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6 py-5">
-        <Link href="/" aria-label="SkillGRID home">
+      <header className="relative mx-auto flex w-full max-w-6xl items-center justify-center px-6 py-5">
+        <Link href="/" aria-label="SkillGRID home" className="inline-flex">
           <Wordmark />
         </Link>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => open("login")}
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-white/70 hover:text-teal-800"
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => open("signup")}
-            className="btn-primary"
-          >
-            Create your account
-          </button>
-        </div>
       </header>
 
       <main id="main" className="relative mx-auto w-full max-w-6xl flex-1 px-6 pb-16 pt-8 sm:px-6 sm:pt-12">
@@ -312,22 +296,13 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
               Put your grid on the board. SkillGRID finds the person whose wants
               match your offers and gets you face to face.
             </p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => open("signup")}
-                className="btn-primary px-6 py-3 text-base"
-              >
-                Create your account
-              </button>
-              <button
-                type="button"
-                onClick={() => open("login")}
-                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/20 bg-white/5 px-6 py-3 text-base font-medium text-white transition-colors hover:bg-white/10"
-              >
-                Sign in
-              </button>
-            </div>
+            <p className="mt-6 inline-flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-300">
+              No credits
+              <span aria-hidden className="h-1 w-1 rounded-full bg-teal-400" />
+              Direct 1:1
+              <span aria-hidden className="h-1 w-1 rounded-full bg-amber-400" />
+              Live sessions
+            </p>
           </div>
         </section>
       </main>

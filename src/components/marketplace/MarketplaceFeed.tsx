@@ -6,6 +6,7 @@ import { friendlyDbError } from "@/lib/errors";
 import type { MarketplaceProfile, SessionFormat } from "@/types/database";
 import ProfileCard from "./ProfileCard";
 import ProposeSessionModal from "./ProposeSessionModal";
+import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -100,137 +101,135 @@ export default function MarketplaceFeed() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
-        <div className="max-w-2xl">
-          <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
-            Marketplace
-          </h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
-            Who fits your grid — members whose skills complement yours.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setOnlyDirect((v) => !v)}
-          aria-pressed={onlyDirect}
-          className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-            onlyDirect
-              ? "border-amber-300 bg-amber-50 text-amber-800"
-              : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
-          }`}
-        >
-          <span
-            aria-hidden
-            className={`h-2 w-2 rounded-full ${
-              onlyDirect ? "bg-amber-500" : "bg-slate-300"
+      <PageHeader
+        eyebrow="Skill exchange"
+        title="Marketplace"
+        subtitle="Who fits your grid — members whose skills complement yours."
+        action={
+          <button
+            type="button"
+            onClick={() => setOnlyDirect((v) => !v)}
+            aria-pressed={onlyDirect}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+              onlyDirect
+                ? "border-amber-300 bg-amber-50 text-amber-800"
+                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
             }`}
-          />
-          Direct matches
-          {directCount > 0 && (
-            <span className="font-semibold tabular-nums">{directCount}</span>
-          )}
-        </button>
-      </div>
+          >
+            <span
+              aria-hidden
+              className={`h-2 w-2 rounded-full ${
+                onlyDirect ? "bg-amber-500" : "bg-slate-300"
+              }`}
+            />
+            Direct matches
+            {directCount > 0 && (
+              <span className="font-semibold tabular-nums">{directCount}</span>
+            )}
+          </button>
+        }
+      />
 
       <form
-        className="mt-5 flex flex-wrap items-end gap-3"
+        className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]"
         onSubmit={(e) => e.preventDefault()}
         role="search"
         aria-label="Filter marketplace"
       >
-        <div className="relative w-full sm:w-64">
-          <svg
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-            viewBox="0 0 16 16"
-          >
-            <circle
-              cx="7"
-              cy="7"
-              r="4.5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative w-full sm:w-72">
+            <svg
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              viewBox="0 0 16 16"
+            >
+              <circle
+                cx="7"
+                cy="7"
+                r="4.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              />
+              <path
+                d="M10.5 10.5 14 14"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              type="search"
+              className="input pl-9"
+              placeholder="Search skills or names"
+              value={filters.search}
+              onChange={(e) => update("search", e.target.value)}
+              aria-label="Search marketplace"
             />
-            <path
-              d="M10.5 10.5 14 14"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
+          </div>
+
+          <div>
+            <label
+              htmlFor="filter-offered"
+              className="mb-1 block text-xs font-medium text-slate-500"
+            >
+              They teach
+            </label>
+            <input
+              id="filter-offered"
+              type="text"
+              className="input w-40"
+              placeholder="e.g. Guitar"
+              value={filters.offered}
+              onChange={(e) => update("offered", e.target.value)}
             />
-          </svg>
-          <input
-            type="search"
-            className="input pl-9"
-            placeholder="Search skills or names"
-            value={filters.search}
-            onChange={(e) => update("search", e.target.value)}
-            aria-label="Search marketplace"
-          />
-        </div>
+          </div>
 
-        <div>
-          <label
-            htmlFor="filter-offered"
-            className="mb-1 block text-xs font-medium text-slate-500"
-          >
-            They teach
-          </label>
-          <input
-            id="filter-offered"
-            type="text"
-            className="input w-40"
-            placeholder="e.g. Guitar"
-            value={filters.offered}
-            onChange={(e) => update("offered", e.target.value)}
-          />
-        </div>
+          <div>
+            <label
+              htmlFor="filter-wanted"
+              className="mb-1 block text-xs font-medium text-slate-500"
+            >
+              They want
+            </label>
+            <input
+              id="filter-wanted"
+              type="text"
+              className="input w-40"
+              placeholder="e.g. Spanish"
+              value={filters.wanted}
+              onChange={(e) => update("wanted", e.target.value)}
+            />
+          </div>
 
-        <div>
-          <label
-            htmlFor="filter-wanted"
-            className="mb-1 block text-xs font-medium text-slate-500"
-          >
-            They want
-          </label>
-          <input
-            id="filter-wanted"
-            type="text"
-            className="input w-40"
-            placeholder="e.g. Spanish"
-            value={filters.wanted}
-            onChange={(e) => update("wanted", e.target.value)}
-          />
-        </div>
+          <div>
+            <label
+              htmlFor="filter-format"
+              className="mb-1 block text-xs font-medium text-slate-500"
+            >
+              Format
+            </label>
+            <select
+              id="filter-format"
+              className="input w-36"
+              value={filters.format}
+              onChange={(e) =>
+                update("format", e.target.value as Filters["format"])
+              }
+            >
+              <option value="">Any</option>
+              <option value="ONLINE">Online</option>
+              <option value="IN_PERSON">In person</option>
+              <option value="EITHER">Either</option>
+            </select>
+          </div>
 
-        <div>
-          <label
-            htmlFor="filter-format"
-            className="mb-1 block text-xs font-medium text-slate-500"
-          >
-            Format
-          </label>
-          <select
-            id="filter-format"
-            className="input w-36"
-            value={filters.format}
-            onChange={(e) =>
-              update("format", e.target.value as Filters["format"])
-            }
-          >
-            <option value="">Any</option>
-            <option value="ONLINE">Online</option>
-            <option value="IN_PERSON">In person</option>
-            <option value="EITHER">Either</option>
-          </select>
+          {hasFilters && (
+            <button type="button" className="btn-secondary" onClick={clearFilters}>
+              Clear filters
+            </button>
+          )}
         </div>
-
-        {hasFilters && (
-          <button type="button" className="btn-secondary" onClick={clearFilters}>
-            Clear filters
-          </button>
-        )}
       </form>
 
       {error && (

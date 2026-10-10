@@ -1,25 +1,34 @@
 import type { ReactNode } from "react";
 
-/**
- * Consistent page header for every authenticated surface. Title + optional
- * subtitle on the left; optional count chip and actions on the right. One
- * rhythm across Marketplace, Matches, Sessions, Profile and Admin.
- */
-export default function PageHeader({
-  title,
-  subtitle,
-  count,
-  action,
-}: {
+interface Props {
+  eyebrow?: string;
   title: string;
   subtitle?: string;
   count?: string;
   action?: ReactNode;
-}) {
+}
+
+/**
+ * Consistent page header for every authenticated surface. Eyebrow + title +
+ * optional subtitle on the left; optional count chip and actions on the right.
+ * One rhythm across Marketplace, Matches, Sessions, Profile and Admin.
+ */
+export default function PageHeader({
+  eyebrow,
+  title,
+  subtitle,
+  count,
+  action,
+}: Props) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
       <div className="max-w-2xl">
-        <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
+        {eyebrow && (
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="mt-1.5 text-balance text-2xl font-semibold tracking-tight text-slate-900">
           {title}
         </h1>
         {subtitle && (

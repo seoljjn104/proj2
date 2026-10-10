@@ -126,8 +126,13 @@ export default function NotificationList() {
     <div className="space-y-4">
       {unread > 0 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-slate-500">
-            {unread} unread
+          <p className="flex items-center gap-2 text-sm text-slate-500">
+            <span
+              aria-hidden
+              className="h-2 w-2 rounded-full bg-teal-500"
+            />
+            <span className="font-semibold text-slate-700">{unread}</span>
+            unread
           </p>
           <button
             type="button"
@@ -140,40 +145,64 @@ export default function NotificationList() {
         </div>
       )}
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {items.map((n) => {
+          const unreadNow = !n.read_at;
           const body = (
             <div className="flex items-start gap-3">
               <span
                 aria-hidden
-                className={`mt-2 h-2 w-2 shrink-0 rounded-full ${
-                  n.read_at ? "bg-slate-200" : "bg-teal-600"
+                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                  unreadNow
+                    ? "bg-teal-50 text-teal-700"
+                    : "bg-slate-100 text-slate-400"
                 }`}
-              />
+              >
+                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none">
+                  <path
+                    d="M8 2.5a3.5 3.5 0 00-3.5 3.5v3l-1 1.5h9l-1-1.5V6A3.5 3.5 0 008 2.5zM6 12.5a2 2 0 004 0"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
               <div className="min-w-0 flex-1">
-                <p
-                  className={`text-sm ${
-                    n.read_at
-                      ? "font-medium text-slate-600"
-                      : "font-semibold text-slate-900"
-                  }`}
-                >
-                  {n.title}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p
+                    className={`text-sm ${
+                      unreadNow
+                        ? "font-semibold text-slate-900"
+                        : "font-medium text-slate-600"
+                    }`}
+                  >
+                    {n.title}
+                  </p>
+                  {unreadNow && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                      New
+                    </span>
+                  )}
+                </div>
                 {n.body && (
-                  <p className="mt-0.5 text-sm text-slate-600">{n.body}</p>
+                  <p className={`mt-0.5 text-sm ${unreadNow ? "text-slate-700" : "text-slate-600"}`}>
+                    {n.body}
+                  </p>
                 )}
                 <p className="mt-1 text-xs text-slate-400">
                   {relativeTime(n.created_at)}
-                  {!n.read_at && (
-                    <span className="sr-only"> — unread</span>
-                  )}
                 </p>
               </div>
             </div>
           );
           return (
-            <li key={n.id} className={`card ${!n.read_at ? "ring-1 ring-teal-100" : ""}`}>
+            <li
+              key={n.id}
+              className={`card relative overflow-hidden ${
+                unreadNow ? "border-l-[3px] border-l-teal-500" : ""
+              }`}
+            >
               {n.session_id ? (
                 <Link
                   href={`/sessions/${n.session_id}`}
