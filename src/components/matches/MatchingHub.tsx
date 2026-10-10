@@ -11,6 +11,7 @@ import ProposeSessionModal, {
   type ProposeTarget,
 } from "@/components/marketplace/ProposeSessionModal";
 import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
 
 /**
  * Matching Hub — reciprocal 1:1 fits only:
@@ -84,16 +85,20 @@ export default function MatchingHub() {
           ))}
         </div>
       ) : matches.length === 0 ? (
-        <div className="card mt-8 text-center">
-          <p className="font-medium text-slate-700">No direct matches yet.</p>
-          <p className="mt-1 text-sm text-slate-600">
-            {hasSkills
-              ? "Keep your OFFERED and WANTED skills sharp — new matches appear as soon as someone complements your grid."
-              : "Add OFFERED and WANTED skills to your profile so we can pair you."}
-          </p>
-          <Link href="/profile" className="btn-primary mt-4 inline-flex">
-            Manage my skills
-          </Link>
+        <div className="mt-8">
+          <EmptyState
+            title="No direct matches yet"
+            body={
+              hasSkills
+                ? "Keep your OFFERED and WANTED skills sharp — new matches appear as soon as someone complements your grid."
+                : "Add OFFERED and WANTED skills to your profile so we can pair you."
+            }
+            action={
+              <Link href="/profile" className="btn-primary inline-flex">
+                Manage my skills
+              </Link>
+            }
+          />
         </div>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

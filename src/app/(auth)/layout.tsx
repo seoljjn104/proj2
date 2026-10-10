@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import SkipLink from "@/components/ui/SkipLink";
+import BrandMark from "@/components/ui/BrandMark";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -8,9 +9,10 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
       <SkipLink />
       <Link
         href="/"
-        className="mb-6 text-lg font-semibold tracking-tight text-teal-700 transition-colors hover:text-teal-800"
+        className="mb-6 flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900 transition-colors hover:text-teal-800"
       >
-        Skill<span className="text-slate-900">GRID</span>
+        <BrandMark />
+        Skill<span className="text-teal-700">GRID</span>
       </Link>
       <main id="main" className="w-full">
         {children}

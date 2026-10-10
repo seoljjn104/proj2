@@ -9,7 +9,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { isAllowedEmailDomain, allowedDomainsHint } from "@/lib/email-domains";
@@ -58,7 +57,6 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,10 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? "Invalid email or password."
           : friendlyAuthError(error.message);
       }
-      router.refresh();
       return null;
     },
-    [supabase, router],
+    [supabase],
   );
 
   const signUp = useCallback(
@@ -173,9 +170,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }, [supabase, router]);
+    // Full reload so middleware re-evaluates with the cleared auth cookie.
+    window.location.assign("/login");
+  }, [supabase]);
 
   const refreshProfile = useCallback(async () => {
     if (user) await loadProfile(user.id);

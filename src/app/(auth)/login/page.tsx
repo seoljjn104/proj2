@@ -2,14 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import PasswordInput from "@/components/ui/PasswordInput";
 import Alert from "@/components/ui/Alert";
 
 export default function LoginPage() {
   const { signIn } = useAuth();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,14 +18,19 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     const message = await signIn(email, password);
-    setBusy(false);
     if (message) {
       setError(message);
+      setBusy(false);
       return;
     }
     const next = new URLSearchParams(window.location.search).get("next");
-    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/marketplace");
-    router.refresh();
+    const target =
+      next && next.startsWith("/") && !next.startsWith("//")
+        ? next
+        : "/marketplace";
+    // Full navigation: sends the fresh auth cookie so middleware renders the
+    // signed-in page on the first request (no manual refresh needed).
+    window.location.assign(target);
   }
 
   return (

@@ -7,6 +7,7 @@ import type { MarketplaceProfile } from "@/types/database";
 import ProfileCard from "./ProfileCard";
 import ProposeSessionModal from "./ProposeSessionModal";
 import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
 
 /**
  * Marketplace Feed — renders public profile cards from the
@@ -116,17 +117,19 @@ export default function MarketplaceFeed() {
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="card mt-8 text-center">
-          <p className="font-medium text-slate-700">
-            {search
-              ? `No profiles match “${search}”.`
-              : "No profiles yet — be the first to add your skills."}
-          </p>
-          {!search && (
-            <p className="mt-1 text-sm text-slate-600">
-              Head to your profile to list OFFERED and WANTED skills.
-            </p>
-          )}
+        <div className="mt-8">
+          <EmptyState
+            title={
+              search
+                ? `No profiles match “${search}”`
+                : "No profiles yet — be the first to add your skills"
+            }
+            body={
+              search
+                ? undefined
+                : "Head to your profile to list OFFERED and WANTED skills so the grid can pair you."
+            }
+          />
         </div>
       ) : (
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

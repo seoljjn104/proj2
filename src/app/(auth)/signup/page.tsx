@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { allowedDomainsHint } from "@/lib/email-domains";
 import PasswordInput from "@/components/ui/PasswordInput";
@@ -10,7 +9,6 @@ import Alert from "@/components/ui/Alert";
 
 export default function SignupPage() {
   const { signUp } = useAuth();
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,8 +36,8 @@ export default function SignupPage() {
       setDone(true);
       return;
     }
-    router.push("/marketplace");
-    router.refresh();
+    // Full navigation so middleware sees the new session immediately.
+    window.location.assign("/marketplace");
   }
 
   if (done) {

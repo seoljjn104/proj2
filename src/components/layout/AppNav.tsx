@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import Avatar from "@/components/ui/Avatar";
+import BrandMark from "@/components/ui/BrandMark";
 
 const LINKS = [
   { href: "/marketplace", label: "Marketplace" },
@@ -28,8 +29,9 @@ export default function AppNav() {
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
         <Link
           href="/marketplace"
-          className="shrink-0 text-lg font-semibold tracking-tight text-slate-900"
+          className="flex shrink-0 items-center gap-2 text-lg font-semibold tracking-tight text-slate-900"
         >
+          <BrandMark />
           Skill<span className="text-teal-700">GRID</span>
         </Link>
 

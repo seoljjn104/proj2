@@ -9,6 +9,7 @@ import type { ProfileDirectory, Session } from "@/types/database";
 import SessionStatusBadge from "./SessionStatusBadge";
 import Avatar from "@/components/ui/Avatar";
 import Alert from "@/components/ui/Alert";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface Enriched {
   session: Session;
@@ -158,15 +159,15 @@ export default function SessionList() {
 
   if (rows.length === 0) {
     return (
-      <div className="card text-center">
-        <p className="font-medium text-slate-700">No sessions yet.</p>
-        <p className="mt-1 text-sm text-slate-600">
-          Propose a 1:1 slot from the Marketplace or Matching Hub.
-        </p>
-        <Link href="/marketplace" className="btn-primary mt-4 inline-flex">
-          Browse marketplace
-        </Link>
-      </div>
+      <EmptyState
+        title="No sessions yet"
+        body="Propose a 1:1 slot from the Marketplace or Matching Hub."
+        action={
+          <Link href="/marketplace" className="btn-primary inline-flex">
+            Browse marketplace
+          </Link>
+        }
+      />
     );
   }
 
