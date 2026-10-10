@@ -34,15 +34,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="card w-full max-w-md">
-      <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
-      <p className="mt-1 text-sm text-slate-600">
+    <div>
+      <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
+        Welcome back
+      </h1>
+      <p className="mt-1.5 text-sm text-slate-600">
         Sign in to keep trading skills with your peers.
       </p>
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <form onSubmit={onSubmit} className="mt-7 space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
             Institutional email
           </label>
           <input
@@ -57,7 +59,7 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
             Password
           </label>
           <PasswordInput
@@ -77,9 +79,9 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-600">
+      <p className="mt-6 text-center text-sm text-slate-600">
         New here?{" "}
-        <Link href="/signup" className="font-medium text-teal-800 hover:underline">
+        <Link href="/signup" className="font-semibold text-teal-700 hover:text-teal-800 hover:underline">
           Create an account
         </Link>
       </p>

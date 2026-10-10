@@ -220,14 +220,14 @@ export default function SessionChat({ sessionId }: Props) {
           <span aria-hidden="true">←</span> All sessions
         </Link>
         <div className="card mt-3">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-semibold tracking-tight">
-                {partnerName}
-              </h1>
-              <SessionStatusBadge status={session.status} />
-            </div>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+                  {partnerName}
+                </h1>
+                <SessionStatusBadge status={session.status} />
+              </div>
             <p className="mt-1 text-sm text-slate-600">
               {isRequester ? "You proposed" : `${partnerName} proposed`} ·{" "}
               {formatSlot(session.scheduled_at)} ·{" "}
@@ -243,14 +243,14 @@ export default function SessionChat({ sessionId }: Props) {
         <div className="mt-4">
           <SessionActions session={session} onUpdate={setSession} />
         </div>
-        </div>
       </div>
+    </div>
 
       {/* Embedded 1:1 video call (Jitsi Meet, in-app) */}
       {session.status === "ACCEPTED" && session.meeting_link && (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            1:1 video
+          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+            1:1 video with {partnerName}
           </h2>
           <MeetingRoom
             roomName={roomNameFromLink(session.meeting_link)}

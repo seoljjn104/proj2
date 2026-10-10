@@ -10,7 +10,7 @@ interface Props {
 
 export default function ProfileCard({ profile, onPropose }: Props) {
   return (
-    <div className="card relative flex flex-col gap-4">
+    <div className="card card-interactive relative flex flex-col gap-4">
       {profile.is_direct_match && (
         <span className="badge-direct absolute -top-2.5 right-4">
           <svg viewBox="0 0 12 12" className="h-3 w-3" aria-hidden="true">

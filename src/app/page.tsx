@@ -135,48 +135,75 @@ export default function HomePage() {
         className="relative mx-auto w-full max-w-6xl flex-1 px-6 pb-16 pt-10 sm:px-6 sm:pt-14"
       >
         <section className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="animate-fade-up max-w-xl">
-            <p className="eyebrow">Peer-to-peer skill exchange</p>
-            <h1 className="mt-3 text-balance text-4xl font-semibold leading-[1.04] tracking-tight text-slate-900 sm:text-6xl">
+          <div className="max-w-xl">
+            <p className="eyebrow motion-safe:animate-fade-up">
+              Peer-to-peer skill exchange
+            </p>
+            <h1
+              className="mt-3 text-balance text-4xl font-semibold leading-[1.04] tracking-tight text-slate-900 motion-safe:animate-fade-up sm:text-6xl"
+              style={{ animationDelay: "90ms" }}
+            >
               Teach what you know.{" "}
               <span className="text-teal-700">Learn what you need.</span>
             </h1>
-            <p className="mt-5 text-lg leading-relaxed text-slate-600">
-              SkillGRID connects two people who want to trade knowledge directly —
-              one teacher, one learner, one session at a time. No credits, no
-              coins.
+            <p
+              className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600 motion-safe:animate-fade-up"
+              style={{ animationDelay: "180ms" }}
+            >
+              SkillGRID pairs two people who want to trade knowledge directly —
+              one teacher, one learner, one session at a time.
             </p>
-            <LandingActions />
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
-              <li>Direct 1:1 only</li>
-              <li>Reciprocal matches</li>
-              <li>In-app video + chat</li>
-            </ul>
+            <div
+              className="motion-safe:animate-fade-up"
+              style={{ animationDelay: "270ms" }}
+            >
+              <LandingActions />
+            </div>
           </div>
 
           <MatchPreview />
         </section>
 
         <section className="mt-24 sm:mt-28">
-          <p className="eyebrow">How it works</p>
-          <h2 className="mt-2 max-w-xl text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+          <h2 className="max-w-xl text-balance text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
             Set your grid, find your counterpart, swap live.
           </h2>
-          <ol className="mt-10 grid gap-6 sm:grid-cols-3">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="card relative">
-                <span className="absolute right-5 top-4 text-sm font-semibold tabular-nums text-slate-300">
-                  0{i + 1}
-                </span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
-                  <StepIcon step={i + 1} />
-                </span>
-                <h3 className="mt-4 font-semibold text-slate-900">{s.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                  {s.body}
-                </p>
-              </li>
-            ))}
+
+          <ol className="mt-10 space-y-6 border-l border-slate-200 pl-12 sm:pl-14">
+            {STEPS.map((s, i) => {
+              const amber = i === 1;
+              return (
+                <li
+                  key={s.title}
+                  className="relative motion-safe:animate-fade-up"
+                  style={{ animationDelay: `${i * 90}ms` }}
+                >
+                  <span
+                    aria-hidden
+                    className={`absolute -left-14 top-0 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full text-xs font-bold tabular-nums text-white ring-4 ring-slate-50 ${
+                      amber ? "bg-amber-500" : "bg-teal-700"
+                    }`}
+                  >
+                    {i + 1}
+                  </span>
+                  <div
+                    className={`card card-interactive p-6 ${
+                      amber ? "border-amber-200" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+                        <StepIcon step={i + 1} />
+                      </span>
+                      <h3 className="font-semibold text-slate-900">{s.title}</h3>
+                    </div>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                      {s.body}
+                    </p>
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </section>
       </main>

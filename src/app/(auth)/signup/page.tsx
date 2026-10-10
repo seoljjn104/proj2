@@ -58,22 +58,22 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="card w-full max-w-md">
-      <h1 className="text-2xl font-semibold tracking-tight">
+    <div>
+      <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
         Create your account
       </h1>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1.5 text-sm text-slate-600">
         Offer what you know. Ask for what you want to learn.
       </p>
       {domainsHint && (
-        <p className="mt-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800">
+        <p className="mt-4 rounded-lg bg-sky-50 px-3 py-2 text-xs leading-relaxed text-sky-800">
           Signups are restricted to: {domainsHint}
         </p>
       )}
 
-      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+      <form onSubmit={onSubmit} className="mt-7 space-y-4">
         <div>
-          <label htmlFor="name" className="mb-1 block text-sm font-medium">
+          <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-slate-700">
             Full name
           </label>
           <input
@@ -89,7 +89,7 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-700">
             Institutional email
           </label>
           <input
@@ -104,7 +104,7 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label htmlFor="password" className="mb-1 block text-sm font-medium">
+          <label htmlFor="password" className="mb-1.5 block text-sm font-medium text-slate-700">
             Password
           </label>
           <PasswordInput
@@ -118,7 +118,7 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label htmlFor="confirm" className="mb-1 block text-sm font-medium">
+          <label htmlFor="confirm" className="mb-1.5 block text-sm font-medium text-slate-700">
             Confirm password
           </label>
           <PasswordInput
@@ -138,9 +138,9 @@ export default function SignupPage() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-slate-600">
+      <p className="mt-6 text-center text-sm text-slate-600">
         Already registered?{" "}
-        <Link href="/login" className="font-medium text-teal-800 hover:underline">
+        <Link href="/login" className="font-semibold text-teal-700 hover:text-teal-800 hover:underline">
           Sign in
         </Link>
       </p>

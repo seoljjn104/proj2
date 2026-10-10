@@ -14,7 +14,7 @@ export default function MatchCard({ match, onPropose }: Props) {
   const gain = match.skills_you_gain ?? [];
 
   return (
-    <div className="card flex flex-col gap-4">
+    <div className="card card-interactive flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <Avatar name={match.partner_name} size="lg" />
         <div className="min-w-0">

@@ -26,6 +26,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
@@ -60,7 +61,7 @@ textarea:focus-visible,
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn,
   .btn-primary,
@@ -69,7 +70,7 @@ textarea:focus-visible,
     @apply active:scale-[0.98];
   }
   .btn-primary {
-    @apply bg-teal-700 text-white shadow-sm hover:bg-teal-800 active:bg-teal-900;
+    @apply bg-teal-700 text-white shadow-sm ring-1 ring-inset ring-white/15 hover:bg-teal-800 active:bg-teal-900;
   }
   .btn-secondary {
     @apply border border-slate-300 bg-white text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100;
@@ -78,13 +79,13 @@ textarea:focus-visible,
     @apply border border-red-200 bg-white text-red-600 shadow-sm hover:border-red-300 hover:bg-red-50 active:bg-red-100;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 hover:border-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 disabled:bg-slate-100 disabled:text-slate-500;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 caret-teal-700 shadow-sm outline-none transition-colors placeholder:text-slate-500 hover:border-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 disabled:bg-slate-100 disabled:text-slate-500;
   }
   .card {
-    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)];
+    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)];
   }
   .card-interactive {
-    @apply transition-shadow hover:shadow-[var(--shadow-lift)];
+    @apply transition-all hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-[var(--shadow-lift)];
   }
   .chip-offered {
     @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200;
@@ -104,6 +105,26 @@ textarea:focus-visible,
       var(--background);
   }
 
+  /* Deep ink panel on the auth split — the brand's "dark half". */
+  .brand-panel {
+    background:
+      radial-gradient(120% 90% at 85% -10%, rgb(20 184 166 / 0.22), transparent 55%),
+      radial-gradient(110% 90% at -10% 110%, rgb(13 148 136 / 0.18), transparent 55%),
+      #0f172a;
+  }
+  .brand-panel-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(
+      120% 100% at 50% 0%,
+      #000 42%,
+      transparent 100%
+    );
+    mask-image: radial-gradient(120% 100% at 50% 0%, #000 42%, transparent 100%);
+  }
+
   /* Signature "grid" motif — a faint blueprint the brand is named for. */
   .grid-motif {
     background-image:
@@ -118,9 +139,16 @@ textarea:focus-visible,
     mask-image: radial-gradient(70% 62% at 50% 0%, #000 38%, transparent 100%);
   }
 
-  /* Small uppercase label above headings. */
+  /* Small uppercase label above headings — with a tiny teal mark. */
   .eyebrow {
     @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-teal-700;
+  }
+  .eyebrow::before {
+    content: "";
+    height: 7px;
+    width: 7px;
+    border-radius: 2px;
+    background: #0f766e;
   }
 
   /* Entrance animation (disabled under reduced motion, below). */
@@ -181,7 +209,8 @@ textarea:focus-visible,
   a,
   button,
   .skeleton,
-  .animate-fade-up {
+  .animate-fade-up,
+  .card-interactive {
     transition: none;
     animation: none;
   }

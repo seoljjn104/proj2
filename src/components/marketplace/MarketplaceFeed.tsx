@@ -60,37 +60,57 @@ export default function MarketplaceFeed() {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Marketplace</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Browse members and see who fits your skill grid.
-            {directCount > 0 && (
-              <span className="ml-1 font-medium text-amber-700">
-                {directCount} direct match{directCount === 1 ? "" : "es"}.
-              </span>
-            )}
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+        <div className="max-w-2xl">
+          <h1 className="text-balance text-2xl font-semibold tracking-tight text-slate-900">
+            Marketplace
+          </h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+            Who fits your grid — members whose skills complement yours.
           </p>
         </div>
 
         <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <input
-            type="search"
-            className="input sm:w-64"
-            placeholder="Search skills or names…"
-            value={search}
-            onChange={(e) => onSearch(e.target.value)}
-            aria-label="Search marketplace"
-          />
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+          <div className="relative w-full sm:w-64">
+            <svg
+              aria-hidden
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+              viewBox="0 0 16 16"
+            >
+              <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              <path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
             <input
-              type="checkbox"
-              checked={onlyDirect}
-              onChange={(e) => setOnlyDirect(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 accent-teal-700"
+              type="search"
+              className="input pl-9"
+              placeholder="Search skills or names"
+              value={search}
+              onChange={(e) => onSearch(e.target.value)}
+              aria-label="Search marketplace"
             />
-            Direct matches only
-          </label>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setOnlyDirect((v) => !v)}
+            aria-pressed={onlyDirect}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+              onlyDirect
+                ? "border-amber-300 bg-amber-50 text-amber-800"
+                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+            }`}
+          >
+            <span
+              aria-hidden
+              className={`h-2 w-2 rounded-full ${
+                onlyDirect ? "bg-amber-500" : "bg-slate-300"
+              }`}
+            />
+            Direct matches
+            {directCount > 0 && (
+              <span className="tabular-nums font-semibold">{directCount}</span>
+            )}
+          </button>
         </div>
       </div>
 

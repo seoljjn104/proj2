@@ -113,8 +113,11 @@ export default function SessionList() {
     if (items.length === 0) return null;
     return (
       <section className="mt-8 first:mt-0">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
           {title}
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] tabular-nums text-slate-600">
+            {items.length}
+          </span>
         </h2>
         <ul className="space-y-3">
           {items.map(({ session, partnerName, partnerId }) => (

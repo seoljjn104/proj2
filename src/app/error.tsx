@@ -15,8 +15,9 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="auth-bg flex min-h-dvh flex-col items-center justify-center px-4 py-12 text-center">
-      <p className="text-sm font-semibold text-red-600">Something went wrong</p>
+    <div className="auth-bg relative flex min-h-dvh flex-col items-center justify-center overflow-x-clip px-4 py-12 text-center">
+      <div aria-hidden className="grid-motif pointer-events-none absolute inset-x-0 top-0 h-[420px]" />
+      <p className="relative text-sm font-semibold text-red-600">Something went wrong</p>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
         We couldn&apos;t load this page
       </h1>
