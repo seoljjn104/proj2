@@ -22,6 +22,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# local session notes (personal dev log, never pushed)
+/SESSION.md
+
 # vercel
 .vercel
 
