@@ -26,7 +26,7 @@ const KIND_STYLE: Record<NotificationKind, string> = {
   SESSION_PROPOSED: "bg-amber-50 text-amber-700",
   SESSION_ACCEPTED: "bg-emerald-50 text-emerald-700",
   SESSION_DECLINED: "bg-red-50 text-red-600",
-  SESSION_CANCELLED: "bg-slate-100 text-slate-500",
+  SESSION_CANCELLED: "bg-slate-100 text-slate-600",
   SESSION_COMPLETED: "bg-teal-50 text-teal-700",
   REVIEW_RECEIVED: "bg-amber-50 text-amber-600",
 };

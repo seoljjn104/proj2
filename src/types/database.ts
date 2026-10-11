@@ -25,6 +25,7 @@ export interface Profile {
   email: string | null;
   bio: string | null;
   headline: string | null;
+  avatar_url: string | null;
   timezone: string | null;
   session_format: SessionFormat;
   availability: string | null;
@@ -39,6 +40,7 @@ export interface ProfileDirectory {
   id: string;
   name: string | null;
   bio: string | null;
+  avatar_url: string | null;
   created_at: string;
 }
 
@@ -131,12 +133,23 @@ export interface Review {
   created_at: string;
 }
 
+/** One shared to-do on a session's call agenda. */
+export interface SessionTodo {
+  id: string;
+  session_id: string;
+  created_by: string;
+  body: string;
+  done: boolean;
+  created_at: string;
+}
+
 /** Row shape of public.get_marketplace_feed(). */
 export interface MarketplaceProfile {
   profile_id: string;
   name: string | null;
   headline: string | null;
   bio: string | null;
+  avatar_url: string | null;
   offered: string[];
   wanted: string[];
   session_format: SessionFormat;
@@ -159,6 +172,7 @@ export interface ReciprocalMatch {
   partner_id: string;
   partner_name: string | null;
   partner_bio: string | null;
+  partner_avatar_url: string | null;
   skills_you_teach: string[] | null;
   skills_you_gain: string[] | null;
 }

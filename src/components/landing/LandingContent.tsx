@@ -106,7 +106,7 @@ function MatchPreview() {
 
         <div aria-hidden className="relative my-3">
           <div className="h-px w-full bg-slate-200" />
-          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-white px-2 text-xs font-semibold text-teal-700">
+          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 rounded-full bg-surface px-2 text-xs font-semibold text-teal-700">
             ⇄
           </span>
         </div>
@@ -144,6 +144,7 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>(initialAuth);
+  const [revoked, setRevoked] = useState(false);
 
   useEffect(() => {
     if (!loading && user) router.replace("/marketplace");
@@ -152,6 +153,18 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
   useEffect(() => {
     if (initialAuth) setMode(initialAuth);
   }, [initialAuth]);
+
+  // Check for revoked session flag in URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("revoked") === "1") {
+      setRevoked(true);
+      setMode("login");
+      params.delete("revoked");
+      window.history.replaceState(null, "", `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`);
+    }
+  }, []);
 
   const close = useCallback(() => {
     setMode(null);
@@ -314,7 +327,17 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
       {mode && (
         <AuthModal key={mode} label={meta} onClose={close}>
           {mode === "login" ? (
-            <LoginForm next={next} onSwitch={() => open("signup")} />
+            <>
+              {revoked && (
+                <div
+                  className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm"
+                  role="alert"
+                >
+                  You were signed out because this account was used to sign in on another device.
+                </div>
+              )}
+              <LoginForm next={next} onSwitch={() => open("signup")} />
+            </>
           ) : (
             <SignupForm onSwitch={() => open("login")} onClose={close} />
           )}

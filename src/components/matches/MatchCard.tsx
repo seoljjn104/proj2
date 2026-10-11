@@ -55,7 +55,7 @@ export default function MatchCard({ match, onPropose }: Props) {
   return (
     <div className="card card-interactive relative flex flex-col gap-4 overflow-hidden border-amber-200 hover:border-amber-300">
       <div className="flex items-center gap-3">
-        <Avatar name={match.partner_name} size="lg" />
+        <Avatar name={match.partner_name} src={match.partner_avatar_url} size="lg" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-semibold text-slate-900">
             {match.partner_name ?? "Unnamed user"}

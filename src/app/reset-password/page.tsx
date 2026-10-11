@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
       </header>
 
       <main id="main" className="relative mx-auto w-full max-w-md flex-1 px-6 pb-16">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[var(--shadow-panel)] sm:p-8">
+        <div className="rounded-xl border border-line bg-surface p-6 shadow-[var(--shadow-panel)] sm:p-8">
           <ResetPasswordForm />
         </div>
       </main>

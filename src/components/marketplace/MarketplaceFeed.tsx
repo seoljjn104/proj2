@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import type { MarketplaceProfile, SessionFormat } from "@/types/database";
 import ProfileCard from "./ProfileCard";
 import ProposeSessionModal from "./ProposeSessionModal";
+import PageShell from "@/components/layout/PageShell";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
@@ -32,6 +34,8 @@ const EMPTY_FILTERS: Filters = {
  */
 export default function MarketplaceFeed() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const qParam = searchParams.get("q") ?? "";
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [profiles, setProfiles] = useState<MarketplaceProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,9 +69,13 @@ export default function MarketplaceFeed() {
     [supabase],
   );
 
+  // The top-bar search drives ?q=. Re-run whenever it changes (and on mount).
   useEffect(() => {
-    void load(EMPTY_FILTERS);
-  }, [load]);
+    const next = { ...EMPTY_FILTERS, search: qParam };
+    setFilters(next);
+    setOnlyDirect(false);
+    void load(next);
+  }, [qParam, load]);
 
   function update<K extends keyof Filters>(key: K, value: Filters[K]) {
     setFilters((prev) => {
@@ -100,7 +108,7 @@ export default function MarketplaceFeed() {
     onlyDirect;
 
   return (
-    <div>
+    <PageShell>
       <PageHeader
         eyebrow="Skill exchange"
         title="Marketplace"
@@ -113,7 +121,7 @@ export default function MarketplaceFeed() {
             className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors sm:w-auto ${
               onlyDirect
                 ? "border-amber-300 bg-amber-50 text-amber-800"
-                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+                : "border-slate-300 bg-surface text-slate-600 hover:border-slate-400 hover:bg-slate-50"
             }`}
           >
             <span
@@ -131,7 +139,7 @@ export default function MarketplaceFeed() {
       />
 
       <form
-        className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)] sm:p-5"
+        className="mt-6 rounded-xl border border-line bg-surface p-4 shadow-[var(--shadow-card)] sm:p-5"
         onSubmit={(e) => e.preventDefault()}
         role="search"
         aria-label="Filter marketplace"
@@ -298,6 +306,6 @@ export default function MarketplaceFeed() {
           onClose={() => setProposing(null)}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

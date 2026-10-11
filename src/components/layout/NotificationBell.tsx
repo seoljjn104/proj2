@@ -47,7 +47,7 @@ export default function NotificationBell({ collapsed = false, onNavigate }: Prop
 
   const badge =
     unread > 0 ? (
-      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-teal-700 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
+      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-teal-700 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-onbrand">
         {unread > 99 ? "99+" : unread}
       </span>
     ) : null;

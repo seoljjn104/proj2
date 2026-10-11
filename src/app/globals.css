@@ -1,21 +1,204 @@
 @import "tailwindcss";
 
+/* ============================================================
+   SkillGRID — "The Exchange" design system
+   ------------------------------------------------------------
+   Warm paper canvas, ink type, hairline rules. Two modes:
+   light (paper) and dark (the room's ink), switched by
+   data-theme on <html> (see ThemeProvider).
+
+   HOW THE RETHEME WORKS
+   The whole app is written against Tailwind's neutral scale
+   (`slate-*`), `white`, and the semantic hues. Rather than
+   rewrite every screen, the scales are *remapped* here to the
+   Exchange palette. `slate-*` now means paper/ink, `teal-*`
+   means brand, and so on. Every mapping points at a `--gg-*`
+   variable, so flipping the theme is a single override block.
+   New work should prefer the semantic utilities (`bg-surface`,
+   `text-ink`, `border-line`) over scale steps.
+   ============================================================ */
+
+:root {
+  color-scheme: light;
+
+  /* Paper + ink */
+  --gg-paper: #f6f1e8;
+  --gg-surface: #fffdf9;
+  --gg-surface-2: #fbf7ef;
+  --gg-side: #f1ebdd;
+  --gg-ink: #17150f;
+  --gg-ink-2: #585241;
+  --gg-ink-3: #6e6753;
+  --gg-line: #e3dac8;
+  --gg-line-2: #efe8d9;
+  --gg-line-strong: #d6cab2;
+
+  /* Brand (teal) */
+  --gg-brand: #0e6b62;
+  --gg-brand-strong: #0a544e;
+  --gg-brand-bg: #eaf4f1;
+  --gg-brand-line: #cfe4e0;
+
+  /* OFFERED (emerald) */
+  --gg-offered: #0b7a57;
+  --gg-offered-bg: #e1f3ea;
+  --gg-offered-line: #bee3d2;
+
+  /* WANTED (sky) */
+  --gg-wanted: #0b5c86;
+  --gg-wanted-bg: #e1eff8;
+  --gg-wanted-line: #bfdcee;
+
+  /* Attention / direct match (amber) */
+  --gg-amber: #a9550b;
+  --gg-amber-bg: #fbeeda;
+  --gg-amber-line: #ebd3a8;
+
+  /* Destructive (red) */
+  --gg-red: #b3261e;
+  --gg-red-bg: #fbe9e7;
+  --gg-red-line: #efc9c4;
+
+  /* Text/ink that sits on a brand fill */
+  --gg-on-brand: #f3fbf9;
+
+  --background: var(--gg-paper);
+  --foreground: var(--gg-ink);
+}
+
+/* Dark mode — the app wearing the room's ink. Warm near-black,
+   never cool slate. Semantics keep their meaning; only shades move. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --gg-paper: #14110b;
+  --gg-surface: #1d1913;
+  --gg-surface-2: #191510;
+  --gg-side: #110f0a;
+  --gg-ink: #f3ede1;
+  --gg-ink-2: #b7af9d;
+  --gg-ink-3: #8a8271;
+  --gg-line: #332c21;
+  --gg-line-2: #262019;
+  --gg-line-strong: #453b2b;
+
+  --gg-brand: #5cc8b6;
+  --gg-brand-strong: #7bd6c6;
+  --gg-brand-bg: #10312c;
+  --gg-brand-line: #1e4a43;
+
+  --gg-offered: #4cc08d;
+  --gg-offered-bg: #0f2a20;
+  --gg-offered-line: #1d4735;
+
+  --gg-wanted: #6ab6e0;
+  --gg-wanted-bg: #0d2534;
+  --gg-wanted-line: #1c4258;
+
+  --gg-amber: #e0a34c;
+  --gg-amber-bg: #2e2413;
+  --gg-amber-line: #4a3a1c;
+
+  --gg-red: #f0857c;
+  --gg-red-bg: #331a17;
+  --gg-red-line: #4e2a25;
+
+  --gg-on-brand: #06201c;
+}
+
 @theme {
   /* Geist is loaded in src/app/layout.tsx via the `geist` package. */
   --font-sans:
     var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Fraunces — the editorial display face, loaded in layout.tsx. */
+  --font-display:
+    var(--font-fraunces), "Fraunces", Georgia, "Times New Roman", serif;
 
-  /* Tinted elevation — carries the cool slate hue, never pure black. */
-  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.06);
-  --shadow-lift: 0 6px 16px -4px rgb(15 23 42 / 0.10), 0 2px 6px -2px rgb(15 23 42 / 0.06);
-  --shadow-panel: 0 16px 40px -16px rgb(15 23 42 / 0.28), 0 4px 12px -6px rgb(15 23 42 / 0.12);
-}
+  /* Semantic surfaces — prefer these in new work. */
+  --color-paper: var(--gg-paper);
+  --color-surface: var(--gg-surface);
+  --color-surface2: var(--gg-surface-2);
+  --color-side: var(--gg-side);
+  --color-line: var(--gg-line);
+  --color-line2: var(--gg-line-2);
+  --color-ink: var(--gg-ink);
+  --color-ink2: var(--gg-ink-2);
+  --color-ink3: var(--gg-ink-3);
+  --color-onbrand: var(--gg-on-brand);
 
-:root {
-  color-scheme: light;
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Neutral scale now means paper/ink. Nothing is cool slate. */
+  --color-slate-50: var(--gg-surface-2);
+  --color-slate-100: var(--gg-line-2);
+  --color-slate-200: var(--gg-line);
+  --color-slate-300: var(--gg-line-strong);
+  --color-slate-400: var(--gg-ink-3);
+  --color-slate-500: var(--gg-ink-3);
+  --color-slate-600: var(--gg-ink-2);
+  --color-slate-700: var(--gg-ink-2);
+  --color-slate-800: var(--gg-ink);
+  --color-slate-900: var(--gg-ink);
+  --color-slate-950: var(--gg-ink);
+
+  /* Brand scale (teal). */
+  --color-teal-50: var(--gg-brand-bg);
+  --color-teal-100: var(--gg-brand-bg);
+  --color-teal-200: var(--gg-brand-line);
+  --color-teal-300: var(--gg-brand-line);
+  --color-teal-400: var(--gg-brand);
+  --color-teal-500: var(--gg-brand);
+  --color-teal-600: var(--gg-brand);
+  --color-teal-700: var(--gg-brand);
+  --color-teal-800: var(--gg-brand-strong);
+  --color-teal-900: var(--gg-brand-strong);
+
+  /* OFFERED (emerald). */
+  --color-emerald-50: var(--gg-offered-bg);
+  --color-emerald-100: var(--gg-offered-bg);
+  --color-emerald-200: var(--gg-offered-line);
+  --color-emerald-300: var(--gg-offered-line);
+  --color-emerald-400: var(--gg-offered);
+  --color-emerald-500: var(--gg-offered);
+  --color-emerald-600: var(--gg-offered);
+  --color-emerald-700: var(--gg-offered);
+  --color-emerald-800: var(--gg-offered);
+
+  /* WANTED (sky). */
+  --color-sky-50: var(--gg-wanted-bg);
+  --color-sky-100: var(--gg-wanted-bg);
+  --color-sky-200: var(--gg-wanted-line);
+  --color-sky-300: var(--gg-wanted-line);
+  --color-sky-400: var(--gg-wanted);
+  --color-sky-500: var(--gg-wanted);
+  --color-sky-600: var(--gg-wanted);
+  --color-sky-700: var(--gg-wanted);
+  --color-sky-800: var(--gg-wanted);
+
+  /* Attention / direct match (amber). */
+  --color-amber-50: var(--gg-amber-bg);
+  --color-amber-100: var(--gg-amber-bg);
+  --color-amber-200: var(--gg-amber-line);
+  --color-amber-300: var(--gg-amber-line);
+  --color-amber-400: var(--gg-amber);
+  --color-amber-500: var(--gg-amber);
+  --color-amber-600: var(--gg-amber);
+  --color-amber-700: var(--gg-amber);
+  --color-amber-800: var(--gg-amber);
+
+  /* Destructive (red). */
+  --color-red-50: var(--gg-red-bg);
+  --color-red-100: var(--gg-red-bg);
+  --color-red-200: var(--gg-red-line);
+  --color-red-300: var(--gg-red-line);
+  --color-red-400: var(--gg-red);
+  --color-red-500: var(--gg-red);
+  --color-red-600: var(--gg-red);
+  --color-red-700: var(--gg-red);
+
+  /* Tinted elevation — warm, never pure black. */
+  --shadow-card: 0 1px 2px 0 rgb(23 21 15 / 0.05), 0 1px 3px 0 rgb(23 21 15 / 0.06);
+  --shadow-lift: 0 6px 18px -6px rgb(23 21 15 / 0.16), 0 2px 6px -2px rgb(23 21 15 / 0.08);
+  --shadow-panel: 0 20px 48px -20px rgb(23 21 15 / 0.34), 0 6px 16px -8px rgb(23 21 15 / 0.16);
 }
 
 html {
@@ -30,9 +213,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Fraunces display helper — headings that carry the editorial voice. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+}
+
 ::selection {
-  background: #ccfbf1;
-  color: #134e4a;
+  background: var(--gg-brand-line);
+  color: var(--gg-brand-strong);
 }
 
 a,
@@ -52,7 +243,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid var(--gg-brand);
   outline-offset: 2px;
   border-radius: 8px;
 }
@@ -62,7 +253,7 @@ textarea:focus-visible,
   .btn-primary,
   .btn-secondary,
   .btn-danger {
-    @apply inline-flex min-h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn,
   .btn-primary,
@@ -71,19 +262,42 @@ textarea:focus-visible,
     @apply active:scale-[0.98];
   }
   .btn-primary {
-    @apply bg-teal-700 text-white shadow-sm ring-1 ring-inset ring-white/15 hover:bg-teal-800 active:bg-teal-900;
+    background: var(--gg-brand);
+    color: var(--gg-on-brand);
+    @apply shadow-sm;
+  }
+  .btn-primary:hover {
+    background: var(--gg-brand-strong);
   }
   .btn-secondary {
-    @apply border border-slate-300 bg-white text-slate-700 shadow-sm hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100;
+    @apply border border-line bg-surface text-ink shadow-sm;
+  }
+  .btn-secondary:hover {
+    border-color: var(--gg-line-strong);
+    background: var(--gg-surface-2);
   }
   .btn-danger {
-    @apply border border-red-200 bg-white text-red-600 shadow-sm hover:border-red-300 hover:bg-red-50 active:bg-red-100;
+    @apply border border-red-200 bg-surface text-red-600 shadow-sm;
+  }
+  .btn-danger:hover {
+    background: var(--gg-red-bg);
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 caret-teal-700 shadow-sm outline-none transition-colors placeholder:text-slate-500 hover:border-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-500/20 disabled:bg-slate-100 disabled:text-slate-500;
+    @apply w-full rounded-md border border-line bg-surface px-3 py-2.5 text-sm text-ink caret-teal-700 shadow-sm outline-none transition-colors placeholder:text-ink3;
+  }
+  .input:hover {
+    border-color: var(--gg-line-strong);
+  }
+  .input:focus {
+    border-color: var(--gg-brand);
+    box-shadow: 0 0 0 3px rgb(14 107 98 / 0.16);
+  }
+  .input:disabled {
+    background: var(--gg-surface-2);
+    color: var(--gg-ink-3);
   }
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white p-5 shadow-[var(--shadow-card)];
+    @apply rounded-xl border border-line bg-surface p-5 shadow-[var(--shadow-card)];
   }
   .card-interactive {
     @apply transition-all hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-[var(--shadow-lift)];
@@ -101,33 +315,38 @@ textarea:focus-visible,
     @apply inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-300;
   }
 
+  /* Frosted chrome for sticky headers and the mobile top bar. */
+  .surface-blur {
+    background: color-mix(in oklab, var(--gg-surface) 88%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
   /* Tinted inset "well" used inside cards (skill lists, exchange rows).
      Borderless on purpose so it reads as a region of the card, never a
      second card. */
   .panel {
-    @apply rounded-xl bg-slate-50 p-3.5;
+    @apply rounded-lg bg-slate-50 p-3.5;
   }
 
-  /* Real section heading for list surfaces. Replaces the uppercase
-     micro-label that had been standing in for an <h2>. */
+  /* Real section heading for list surfaces. */
   .section-title {
-    @apply text-base font-semibold tracking-tight text-slate-900;
+    @apply text-base font-semibold tracking-tight text-ink;
   }
 
   /* Soft branded backdrop for full-screen (error/not-found) pages. */
   .auth-bg {
     background:
-      radial-gradient(1000px 520px at 50% -15%, rgb(13 148 136 / 0.12), transparent 60%),
-      radial-gradient(800px 460px at 100% 100%, rgb(14 165 233 / 0.1), transparent 60%),
+      radial-gradient(1000px 520px at 50% -15%, rgb(14 107 98 / 0.12), transparent 60%),
+      radial-gradient(800px 460px at 100% 100%, rgb(11 92 134 / 0.1), transparent 60%),
       var(--background);
   }
 
   /* Deep ink panel on the auth split — the brand's "dark half". */
   .brand-panel {
     background:
-      radial-gradient(120% 90% at 85% -10%, rgb(20 184 166 / 0.22), transparent 55%),
-      radial-gradient(110% 90% at -10% 110%, rgb(13 148 136 / 0.18), transparent 55%),
-      #0f172a;
+      radial-gradient(120% 90% at 85% -10%, rgb(92 200 182 / 0.22), transparent 55%),
+      radial-gradient(110% 90% at -10% 110%, rgb(14 107 98 / 0.22), transparent 55%),
+      #17150f;
   }
   .brand-panel-grid {
     background-image:
@@ -145,8 +364,8 @@ textarea:focus-visible,
   /* Signature "grid" motif — a faint blueprint the brand is named for. */
   .grid-motif {
     background-image:
-      linear-gradient(to right, rgb(15 23 42 / 0.055) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(15 23 42 / 0.055) 1px, transparent 1px);
+      linear-gradient(to right, rgb(23 21 15 / 0.055) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(23 21 15 / 0.055) 1px, transparent 1px);
     background-size: 46px 46px;
     -webkit-mask-image: radial-gradient(
       70% 62% at 50% 0%,
@@ -165,12 +384,19 @@ textarea:focus-visible,
     height: 7px;
     width: 7px;
     border-radius: 2px;
-    background: #0f766e;
+    background: var(--gg-brand);
   }
 
   /* Entrance animation (disabled under reduced motion, below). */
   .animate-fade-up {
     animation: fade-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Route change: a short, quiet entrance so moving between pages reads as a
+     change of place rather than a hard cut. Deliberately quicker than
+     .animate-fade-up — navigation should never feel slowed down. */
+  .page-enter {
+    animation: page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   /* Skeleton shimmer for loading states. */
@@ -180,7 +406,7 @@ textarea:focus-visible,
   }
 
   .modal-backdrop {
-    @apply fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 p-4;
+    @apply fixed inset-0 z-50 overflow-y-auto bg-black/45 p-4;
   }
   .modal-panel {
     @apply mx-auto my-auto w-full max-w-md motion-safe:animate-[modal-in_180ms_ease-out];
@@ -228,6 +454,17 @@ textarea:focus-visible,
   }
 }
 
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -236,6 +473,7 @@ textarea:focus-visible,
   button,
   .skeleton,
   .animate-fade-up,
+  .page-enter,
   .card-interactive {
     transition: none;
     animation: none;

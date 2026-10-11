@@ -625,9 +625,9 @@ async function main() {
     check("alice GET /sessions -> 200", sessions.status === 200, `got ${sessions.status}`);
 
     const login = await appGet("/login", { cookie: aliceCookie });
-    check("signed-in GET /login redirects to /marketplace",
+    check("signed-in GET /login redirects to /home",
       [302, 303, 307, 308].includes(login.status) &&
-        (login.location ?? "").includes("/marketplace"),
+        (login.location ?? "").includes("/home"),
       `got ${login.status} -> ${login.location}`);
 
     const bobCookie = await appSessionCookie(BOB);

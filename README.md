@@ -14,7 +14,7 @@ no accounts, free).
 | Service | What you need |
 |---|---|
 | [Supabase](https://supabase.com) | A project (free tier is fine). Project URL + anon key from **Project Settings → API**. |
-| [Jitsi Meet](https://meet.jit.si) | Free, open source video. **No account and no API keys** — the 1:1 call is embedded directly in the session page via the [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/) (participants never leave the app). |
+| [Jitsi Meet](https://jitsi.org/jitsi-meet/) | Free, open source video. **No account and no API keys** — the 1:1 call is embedded directly in the session page via the [Jitsi Meet IFrame API](https://jitsi.github.io/handbook/docs/dev-guide/dev-guide-iframe/) (participants never leave the app). Defaults to `jitsi.riot.im`; override with `NEXT_PUBLIC_JITSI_DOMAIN` (see §3). |
 | Node.js | v20+ (v24 verified). |
 | Supabase CLI | `npm i -g supabase` (v2 verified), or use `npx supabase`. |
 | Docker | Only needed for fully local Supabase (`supabase start`). Skip it if you push to a hosted project. |
@@ -108,10 +108,38 @@ supabase functions deploy generate-meeting-link
 
 The function is invoked by the client right after a provider accepts a
 session (`status -> ACCEPTED`). It builds an unguessable
-`https://meet.jit.si/skillgrid-<session-id>-<random>` room URL and stores it
+`https://<JITSI_DOMAIN>/skillgrid-<session-id>-<random>` room URL and stores it
 in `sessions.meeting_link`, which the session page then renders as an
 embedded in-app video call. It is idempotent: if a link already exists it is
 returned unchanged.
+
+> **Do not use `meet.jit.si`.** It now refuses to start a room until an
+> authenticated moderator arrives, so both participants see *"The conference
+> has not yet started, because no moderators have yet arrived"*. This is
+> server-side policy — no `configOverwrite` can lift it.
+>
+> The host has to pass **two** checks, and it is easy to check only the first:
+>
+> 1. **It allows anonymous moderators** — otherwise you get the message above.
+> 2. **It is framable** — if it sends `X-Frame-Options` or a
+>    `Content-Security-Policy: frame-ancestors` list that excludes you, the
+>    browser drops the iframe and the room is an empty box.
+>    (`meet.ffmuc.net` passes 1 and fails 2: `X-Frame-Options: SAMEORIGIN`.)
+>
+> The app defaults to `jitsi.riot.im`, which passes both — verified with two
+> participants, the first becoming moderator. To change it, set **both**:
+>
+> ```bash
+> # client (build/dev)
+> NEXT_PUBLIC_JITSI_DOMAIN=meet.example.org
+> # edge function
+> supabase secrets set JITSI_DOMAIN=meet.example.org
+> supabase functions deploy generate-meeting-link
+> ```
+>
+> Both must agree: the client embeds the domain, the function mints the link.
+> Only the room *name* is stored server-side, so changing the domain later
+> keeps existing sessions joinable.
 
 > The room URL is only ever shown to the two session participants (the
 > Realtime view + participant RLS). Hardening options for later: run your
@@ -278,12 +306,19 @@ can be permanently removed from history by either participant via
 routes through the RPCs above, so direct REST writes can no longer skip the
 rules.
 
+Each session also carries a small shared **To do** list — what the swap will
+cover (`public.session_todos`, migration
+`20261011000002_session_agenda.sql`), readable and writable by the two
+participants only. The session page shows it as a paper card, and the call shows
+the same list as its to-do rail and as the first tab of the in-call sheet.
+
 ### Realtime
 
-`messages` and `sessions` are added to the `supabase_realtime`
-publication. The chat view subscribes to `INSERT` on `messages`
-(filtered by `session_id`) and `UPDATE` on `sessions` (status /
-meeting link); RLS decides what each subscriber actually receives.
+`messages`, `sessions` and `session_todos` are added to the
+`supabase_realtime` publication. The chat view subscribes to `INSERT` on
+`messages` (filtered by `session_id`) and `UPDATE` on `sessions` (status /
+meeting link); the shared to-do list subscribes to `INSERT`/`UPDATE`/`DELETE`
+on `session_todos`. RLS decides what each subscriber actually receives.
 
 ### Routes
 
@@ -291,11 +326,17 @@ meeting link); RLS decides what each subscriber actually receives.
 |---|---|
 | `/` | Landing (auto-redirects to marketplace when signed in) |
 | `/login`, `/signup`, `/auth/callback` | Email auth + verification exchange |
-| `/marketplace` | Marketplace feed with Direct Match badges |
+| `/home` | Dashboard: what needs you now, next session, quick actions |
+| `/marketplace` | Marketplace feed with Direct Match badges (centred `?q=` search) |
 | `/matches` | Reciprocal Matching Hub |
-| `/sessions`, `/sessions/[id]` | Session list (incoming/outgoing/upcoming/history), lifecycle actions, realtime chat, reviews, report/block |
+| `/sessions`, `/sessions/[id]` | Session list (incoming/outgoing/upcoming/history), lifecycle actions, realtime chat, shared to do, reviews, report/block |
+| `/sessions/[id]/precall` | Device check + join (standalone, no app shell) |
+| `/sessions/[id]/room` | The call (standalone, ink in both themes): swap title + clock, to-do rail, one bar — Mic · Camera · Swap · More · End |
+| `/messages` | Three-column conversation workspace |
 | `/notifications` | In-app notifications with unread count |
-| `/profile` | Profile details + OFFERED/WANTED skill manager + blocked members |
+| `/profile` | Profile picture, details, OFFERED/WANTED skill manager, blocked members |
+| `/settings` | Appearance (light/dark) + account |
+| `/help` | FAQ |
 | `/admin` | Member reports queue + flag/unflag board (admins only) |
 
 ---
@@ -304,7 +345,7 @@ meeting link); RLS decides what each subscriber actually receives.
 
 ```
 supabase/
-  migrations/            # 4 SQL migrations (schema, RLS, functions, realtime)
+  migrations/            # append-only SQL migrations (schema → RLS → functions → realtime → …)
   seed.sql               # skill catalog + admin/allowlist snippets
   functions/generate-meeting-link/   # embedded Jitsi room generator (no secrets)
   config.toml
@@ -312,8 +353,8 @@ scripts/parse-sql.mjs    # SQL syntax validator (libpg_query)
 scripts/e2e.mjs          # end-to-end smoke test (app + API + triggers + RLS)
 scripts/simulate.mjs     # single-account product-flow simulation
 src/
-  app/                   # routes: (auth)/, (app)/, auth/callback
-  components/            # marketplace, matches, chat, sessions, profile, admin, layout
+  app/                   # routes: (app)/, (room)/, (auth) login+signup, auth/callback
+  components/            # marketplace, matches, chat, sessions, profile, settings, admin, layout
   hooks/useAuth.tsx      # session + profile provider, domain-checked signup
   lib/supabase/          # browser/server/middleware clients
   lib/email-domains.ts   # institutional domain allowlist helper

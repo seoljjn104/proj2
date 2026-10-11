@@ -43,3 +43,6 @@ supabase/.branches
 /.playwright/
 /test-results/
 /playwright-report/
+
+# superpowers visual brainstorming (local mockups)
+/.superpowers/

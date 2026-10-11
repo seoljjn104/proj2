@@ -31,8 +31,12 @@ never commit it.
 
 ## UI conventions
 
-- Tailwind v4, **light mode only**. Brand + semantic tokens live in the `@theme`
-  block and `@layer components` in `src/app/globals.css`.
+- Tailwind v4, **light + dark**. Brand + semantic tokens live in the `@theme`
+  block and `@layer components` in `src/app/globals.css`. The palette scales are
+  remapped there to the warm "Exchange" palette; `[data-theme="dark"]` on
+  `<html>` (set by `ThemeProvider`) flips them. Prefer the semantic utilities
+  (`bg-surface`, `text-ink`, `border-line`) in new work. The session room stays
+  ink in both modes.
 - Reuse the existing primitives: `.btn-primary` / `.btn-secondary` / `.btn-danger`
   / `.input` / `.card` / `.skeleton` / chips. Don't hand-roll a second button style.
 - Semantics: teal = primary, emerald = OFFERED, sky = WANTED, amber = direct match

@@ -5,7 +5,7 @@ const STYLES: Record<SessionStatus, string> = {
   ACCEPTED: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   DECLINED: "bg-red-50 text-red-700 ring-red-200",
   COMPLETED: "bg-slate-100 text-slate-700 ring-slate-200",
-  CANCELLED: "bg-slate-100 text-slate-500 ring-slate-200",
+  CANCELLED: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 
 const LABELS: Record<SessionStatus, string> = {

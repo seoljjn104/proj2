@@ -1,7 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
+import { Fraunces } from "next/font/google";
 import { AuthProvider } from "@/hooks/useAuth";
+import ThemeProvider, {
+  THEME_INIT_SCRIPT,
+} from "@/components/theme/ThemeProvider";
 import "./globals.css";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -35,16 +45,30 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f8fafc",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f1e8" },
+    { media: "(prefers-color-scheme: dark)", color: "#14110b" },
+  ],
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={GeistSans.variable}>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
-        <AuthProvider>{children}</AuthProvider>
+    <html
+      lang="en"
+      className={`${GeistSans.variable} ${fraunces.variable}`}
+      // THEME_INIT_SCRIPT sets data-theme/color-scheme before paint, so the
+      // server HTML cannot match on first render. Suppress only that check.
+      suppressHydrationWarning
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { ProfileDirectory, Review, Session } from "@/types/database";
 import Alert from "@/components/ui/Alert";
+import Avatar from "@/components/ui/Avatar";
 
 interface Props {
   session: Session;
@@ -30,7 +31,9 @@ export default function ReviewSection({ session }: Props) {
   const supabase = createClient();
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [names, setNames] = useState<
+    Record<string, { name: string; avatar: string | null }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
@@ -52,9 +55,12 @@ export default function ReviewSection({ session }: Props) {
       const { data: dirRows } = await supabase.rpc("get_profile_directory", {
         p_ids: reviewerIds,
       });
-      const map: Record<string, string> = {};
-      for (const row of (dirRows as Pick<ProfileDirectory, "id" | "name">[]) ?? []) {
-        map[row.id] = row.name ?? "Member";
+      const map: Record<string, { name: string; avatar: string | null }> = {};
+      for (const row of (dirRows as ProfileDirectory[]) ?? []) {
+        map[row.id] = {
+          name: row.name ?? "Member",
+          avatar: row.avatar_url ?? null,
+        };
       }
       setNames(map);
     }
@@ -160,8 +166,9 @@ export default function ReviewSection({ session }: Props) {
             {reviews.map((r) => (
               <li key={r.id} className="rounded-lg bg-slate-50 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-slate-800">
-                    {names[r.reviewer_id] ?? "Member"}
+                  <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                    <Avatar name={names[r.reviewer_id]?.name} src={names[r.reviewer_id]?.avatar} size="sm" />
+                    {names[r.reviewer_id]?.name ?? "Member"}
                   </span>
                   <Stars value={r.rating} />
                 </div>

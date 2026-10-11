@@ -22,7 +22,11 @@ interface Props {
 }
 
 const TONES: Record<Tone, { active: string; rail: string; dot: string }> = {
-  teal: { active: "bg-teal-50 text-teal-800", rail: "bg-teal-600", dot: "bg-teal-600" },
+  teal: {
+    active: "bg-surface text-ink shadow-[var(--shadow-card)]",
+    rail: "bg-teal-600",
+    dot: "bg-teal-600",
+  },
   amber: {
     active: "bg-amber-50 text-amber-800",
     rail: "bg-amber-500",
@@ -34,6 +38,9 @@ const TONES: Record<Tone, { active: string; rail: string; dot: string }> = {
  * One navigation row. Shared by the desktop sidebar and the mobile drawer so
  * both stay visually identical. Collapsed, the label is hidden but kept in the
  * accessibility tree via aria-label and a title tooltip.
+ *
+ * The active row lifts onto a surface chip with a teal rail — the Exchange's
+ * "you are here" mark.
  */
 export default function NavItem({
   href,
@@ -54,12 +61,12 @@ export default function NavItem({
       aria-current={active ? "page" : undefined}
       aria-label={ariaLabel ?? (collapsed ? label : undefined)}
       title={collapsed ? label : undefined}
-      className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors ${
+      className={`group relative flex min-h-11 items-center gap-3 rounded-[10px] px-3 text-sm transition-colors ${
         collapsed ? "justify-center px-0" : ""
       } ${
         active
-          ? t.active
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          ? `${t.active} font-semibold`
+          : "font-medium text-ink2 hover:bg-surface/70 hover:text-ink"
       }`}
     >
       <span
@@ -68,7 +75,10 @@ export default function NavItem({
           active ? `${t.rail} opacity-100` : "opacity-0"
         }`}
       />
-      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+      <Icon
+        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-teal-700" : "text-ink3 group-hover:text-ink2"}`}
+        aria-hidden="true"
+      />
       {!collapsed && <span className="truncate">{label}</span>}
       {!collapsed && badge ? <span className="ml-auto">{badge}</span> : null}
       {collapsed && badge ? (

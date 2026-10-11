@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,41 +14,21 @@ const FORMATS: { value: SessionFormat; label: string }[] = [
   { value: "EITHER", label: "Online or in person" },
 ];
 
-/** Common IANA zones for the datalist (best-effort; free text still allowed). */
-function useTimezoneOptions(): string[] {
-  return useMemo(() => {
-    const intl = Intl as typeof Intl & {
-      supportedValuesOf?: (key: string) => string[];
-    };
-    const guess = intl.DateTimeFormat().resolvedOptions().timeZone;
-    const all =
-      typeof intl.supportedValuesOf === "function"
-        ? intl.supportedValuesOf("timeZone")
-        : [];
-    return guess && !all.includes(guess) ? [guess, ...all] : all;
-  }, []);
-}
-
 export default function ProfileForm() {
   const supabase = createClient();
   const { profile, user, refreshProfile, loading } = useAuth();
   const [name, setName] = useState("");
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
-  const [timezone, setTimezone] = useState("");
   const [format, setFormat] = useState<SessionFormat>("ONLINE");
-  const [availability, setAvailability] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
-  const timezones = useTimezoneOptions();
 
   useEffect(() => {
     setName(profile?.name ?? "");
     setHeadline(profile?.headline ?? "");
     setBio(profile?.bio ?? "");
-    setTimezone(profile?.timezone ?? "");
     setFormat(profile?.session_format ?? "ONLINE");
-    setAvailability(profile?.availability ?? "");
   }, [profile]);
 
   async function onSubmit(e: FormEvent) {
@@ -66,9 +46,7 @@ export default function ProfileForm() {
         name: name.trim() || null,
         headline: headline.trim() || null,
         bio: bio.trim() || null,
-        timezone: timezone.trim() || null,
         session_format: format,
-        availability: availability.trim() || null,
       })
       .eq("id", user.id);
     if (updateError) {
@@ -146,67 +124,29 @@ export default function ProfileForm() {
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label
-            htmlFor="profile-timezone"
-            className="mb-1 block text-sm font-medium text-slate-700"
-          >
-            Timezone
-          </label>
-          <input
-            id="profile-timezone"
-            className="input"
-            list="timezone-options"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            placeholder="Europe/London"
-            autoComplete="off"
-          />
-          <datalist id="timezone-options">
-            {timezones.map((tz) => (
-              <option key={tz} value={tz} />
-            ))}
-          </datalist>
-        </div>
-
-        <div>
-          <label
-            htmlFor="profile-format"
-            className="mb-1 block text-sm font-medium text-slate-700"
-          >
-            Preferred format
-          </label>
-          <select
-            id="profile-format"
-            className="input"
-            value={format}
-            onChange={(e) => setFormat(e.target.value as SessionFormat)}
-          >
-            {FORMATS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
       <div>
         <label
-          htmlFor="profile-availability"
+          htmlFor="profile-format"
           className="mb-1 block text-sm font-medium text-slate-700"
         >
-          Availability
+          Preferred format
         </label>
-        <input
-          id="profile-availability"
-          className="input"
-          value={availability}
-          onChange={(e) => setAvailability(e.target.value)}
-          maxLength={160}
-          placeholder="Weekday evenings, weekend mornings"
-        />
+        <select
+          id="profile-format"
+          className="input sm:max-w-xs"
+          value={format}
+          onChange={(e) => setFormat(e.target.value as SessionFormat)}
+          aria-describedby="profile-format-help"
+        >
+          {FORMATS.map((f) => (
+            <option key={f.value} value={f.value}>
+              {f.label}
+            </option>
+          ))}
+        </select>
+        <p id="profile-format-help" className="mt-1 text-xs text-slate-500">
+          Shown on your marketplace card so members know how you like to meet.
+        </p>
       </div>
 
       {error && <Alert>{error}</Alert>}

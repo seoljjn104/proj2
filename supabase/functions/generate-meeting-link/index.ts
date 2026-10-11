@@ -11,11 +11,28 @@
 // so only the two participants — who see the link inside the
 // app — can join.
 //
+// IMPORTANT: the host has to satisfy two conditions, not one.
+//   * It must be FRAMABLE — no X-Frame-Options / restrictive
+//     frame-ancestors, or the browser blocks the embed entirely.
+//     (meet.ffmuc.net sends X-Frame-Options: SAMEORIGIN, so it
+//     cannot be embedded even though it allows anonymous rooms.)
+//   * It must allow ANONYMOUS MODERATORS — meet.jit.si does not,
+//     and shows "no moderators have yet arrived" instead of
+//     starting the call.
+// This targets JITSI_DOMAIN (default jitsi.riot.im, which does
+// both). Set the same domain on the client via
+// NEXT_PUBLIC_JITSI_DOMAIN so the embedded client and this link agree.
+//
 // Runs with the caller's JWT: RLS guarantees only a session
 // participant can read/update the session row.
 // ============================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+
+const JITSI_DOMAIN = (Deno.env.get("JITSI_DOMAIN") ?? "jitsi.riot.im")
+  .trim()
+  .replace(/^https?:\/\//, "")
+  .replace(/\/+$/, "");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,7 +104,7 @@ Deno.serve(async (req) => {
     // Unguessable room: session id + random suffix. The meeting itself is
     // not scheduled — the room exists the moment a participant joins.
     const roomName = `skillgrid-${session.id}-${crypto.randomUUID().slice(0, 8)}`;
-    const meeting_link = `https://meet.jit.si/${roomName}`;
+    const meeting_link = `https://${JITSI_DOMAIN}/${roomName}`;
 
     const { data: updated, error: updateError } = await supabase
       .from("sessions")

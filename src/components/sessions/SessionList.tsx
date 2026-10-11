@@ -15,6 +15,7 @@ import EmptyState from "@/components/ui/EmptyState";
 interface Enriched {
   session: Session;
   partnerName: string;
+  partnerAvatar: string | null;
   partnerId: string;
 }
 
@@ -95,14 +96,16 @@ export default function SessionList() {
         ),
       ),
     ];
-    const nameMap: Record<string, string> = {};
+    const people: Record<string, { name: string; avatar: string | null }> = {};
     if (partnerIds.length > 0) {
       const { data: dirRows } = await supabase.rpc("get_profile_directory", {
         p_ids: partnerIds,
       });
-      for (const row of (dirRows as Pick<ProfileDirectory, "id" | "name">[]) ??
-        []) {
-        nameMap[row.id] = row.name ?? "Member";
+      for (const row of (dirRows as ProfileDirectory[]) ?? []) {
+        people[row.id] = {
+          name: row.name ?? "Member",
+          avatar: row.avatar_url ?? null,
+        };
       }
     }
 
@@ -110,10 +113,12 @@ export default function SessionList() {
       sessions.map((s) => {
         const partnerId =
           s.requester_id === user.id ? s.provider_id : s.requester_id;
+        const person = people[partnerId];
         return {
           session: s,
           partnerId,
-          partnerName: nameMap[partnerId] ?? "Member",
+          partnerName: person?.name ?? "Member",
+          partnerAvatar: person?.avatar ?? null,
         };
       }),
     );
@@ -184,13 +189,13 @@ export default function SessionList() {
         </h2>
         {hint && <p className="mb-3 mt-1 text-sm text-slate-500">{hint}</p>}
         <ul className={hint ? "space-y-3" : "mt-3 space-y-3"}>
-          {items.map(({ session, partnerName, partnerId }) => (
+          {items.map(({ session, partnerName, partnerAvatar, partnerId }) => (
             <li key={session.id}>
               <Link
                 href={`/sessions/${session.id}`}
                 className="card card-interactive group flex flex-wrap items-center gap-3 sm:gap-4"
               >
-                <Avatar name={partnerName} size="md" />
+                <Avatar name={partnerName} src={partnerAvatar} size="md" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium text-slate-900">{partnerName}</p>

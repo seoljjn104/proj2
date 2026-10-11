@@ -56,7 +56,7 @@ export default function MatchingHub() {
     <div>
       <PageHeader
         eyebrow="Two-way exchange"
-        title="Matching Hub"
+        title="Matches"
         subtitle="People who want to learn what you teach, and can teach what you want to learn."
         count={
           !loading && !error && matches.length > 0

@@ -56,7 +56,7 @@ export default function ProfileCard({ profile, onPropose }: Props) {
       }`}
     >
       <div className="flex items-center gap-3">
-        <Avatar name={profile.name} size="lg" />
+        <Avatar name={profile.name} src={profile.avatar_url} size="lg" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-semibold text-slate-900">
             {profile.name ?? "Unnamed user"}

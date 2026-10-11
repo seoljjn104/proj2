@@ -68,7 +68,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/45 backdrop-blur-sm"
       onClick={busy ? undefined : onCancel}
       role="presentation"
     >
@@ -78,7 +78,7 @@ export default function ConfirmDialog({
         aria-modal="true"
         aria-label={title}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-[var(--shadow-panel)] motion-safe:animate-[modal-in_180ms_ease-out]"
+        className="relative w-full max-w-sm rounded-xl border border-line bg-surface p-6 shadow-[var(--shadow-panel)] motion-safe:animate-[modal-in_180ms_ease-out]"
       >
         <button
           type="button"

@@ -55,7 +55,7 @@ export default function AuthModal({ label, onClose, children }: Props) {
 
   return (
     <div
-      className="auth-backdrop fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 backdrop-blur-md"
+      className="auth-backdrop fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-md"
       onClick={onClose}
       role="presentation"
     >
@@ -66,7 +66,7 @@ export default function AuthModal({ label, onClose, children }: Props) {
           aria-modal="true"
           aria-label={label}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-[var(--shadow-panel)] motion-safe:animate-[modal-in_180ms_ease-out] sm:p-8"
+          className="relative w-full max-w-md rounded-xl border border-line bg-surface p-6 shadow-[var(--shadow-panel)] motion-safe:animate-[modal-in_180ms_ease-out] sm:p-8"
         >
           <button
             type="button"

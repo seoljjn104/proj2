@@ -6,6 +6,7 @@ import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
 import type { Block, ProfileDirectory } from "@/types/database";
 import Alert from "@/components/ui/Alert";
+import Avatar from "@/components/ui/Avatar";
 
 /**
  * Manage the members you have blocked. RLS only ever returns your own
@@ -14,7 +15,9 @@ import Alert from "@/components/ui/Alert";
 export default function BlockedMembers() {
   const supabase = createClient();
   const { user, loading: authLoading } = useAuth();
-  const [rows, setRows] = useState<{ id: string; name: string }[]>([]);
+  const [rows, setRows] = useState<
+    { id: string; name: string; avatar: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -35,19 +38,25 @@ export default function BlockedMembers() {
     const ids = ((data as Pick<Block, "blocked_id">[]) ?? []).map(
       (r) => r.blocked_id,
     );
-    let names: Record<string, string> = {};
+    let people: Record<string, { name: string; avatar: string | null }> = {};
     if (ids.length > 0) {
       const { data: dirRows } = await supabase.rpc("get_profile_directory", {
         p_ids: ids,
       });
-      names = Object.fromEntries(
-        ((dirRows as Pick<ProfileDirectory, "id" | "name">[]) ?? []).map((d) => [
+      people = Object.fromEntries(
+        ((dirRows as ProfileDirectory[]) ?? []).map((d) => [
           d.id,
-          d.name ?? "Member",
+          { name: d.name ?? "Member", avatar: d.avatar_url ?? null },
         ]),
       );
     }
-    setRows(ids.map((id) => ({ id, name: names[id] ?? "Member" })));
+    setRows(
+      ids.map((id) => ({
+        id,
+        name: people[id]?.name ?? "Member",
+        avatar: people[id]?.avatar ?? null,
+      })),
+    );
     setLoading(false);
   }, [supabase, user]);
 
@@ -87,7 +96,10 @@ export default function BlockedMembers() {
         <ul className="divide-y divide-slate-100">
           {rows.map((r) => (
             <li key={r.id} className="flex items-center justify-between gap-4 py-2">
-              <span className="text-sm text-slate-700">{r.name}</span>
+              <span className="flex min-w-0 items-center gap-2 text-sm text-slate-700">
+                <Avatar name={r.name} src={r.avatar} size="sm" />
+                <span className="truncate">{r.name}</span>
+              </span>
               <button
                 type="button"
                 className="btn-secondary"

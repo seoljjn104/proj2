@@ -106,6 +106,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase, loadProfile]);
 
+  // Periodic check: if the current session was revoked (user logged in elsewhere),
+  // sign out locally. Runs every 60s.
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.refresh_token) return;
+      const { data: isValid } = await supabase.rpc("is_session_valid", {
+        p_user_id: user.id,
+        p_session_id: session.refresh_token,
+      });
+      if (isValid === false) {
+        await supabase.auth.signOut();
+        window.location.assign("/?auth=login&revoked=1");
+      }
+    };
+    const timer = window.setInterval(check, 60_000);
+    return () => window.clearInterval(timer);
+  }, [user, supabase]);
+
   const signIn = useCallback(
     async (email: string, password: string): Promise<string | null> => {
       if (!isAllowedEmailDomain(email)) {
@@ -114,7 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? `Only these institutional domains can sign in: ${hint}`
           : "This email domain is not allowed.";
       }
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
@@ -122,6 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return error.message === "Invalid login credentials"
           ? "Invalid email or password."
           : friendlyAuthError(error.message);
+      }
+      // Register this session, revoking any existing sessions for this user
+      if (data.session?.user?.id && data.session.refresh_token) {
+        await supabase.rpc("register_user_session", {
+          p_user_id: data.session.user.id,
+          p_session_id: data.session.refresh_token,
+          p_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        });
       }
       return null;
     },
@@ -143,8 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error: hint
             ? `Signups are restricted to these institutional domains: ${hint}`
             : "This email domain is not allowed.",
-          needsConfirmation: false,
-        };
+        needsConfirmation: false };
       }
       if (password.length < 8) {
         return {
@@ -163,12 +192,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) return { error: friendlyAuthError(error.message), needsConfirmation: false };
+      // Register the new session if confirmed immediately
+      if (data.session?.user?.id && data.session.refresh_token) {
+        await supabase.rpc("register_user_session", {
+          p_user_id: data.session.user.id,
+          p_session_id: data.session.refresh_token,
+          p_user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+        });
+      }
       return { error: null, needsConfirmation: !data.session };
     },
     [supabase],
   );
 
   const signOut = useCallback(async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user?.id && session.refresh_token) {
+      await supabase.rpc("revoke_user_session", {
+        p_user_id: session.user.id,
+        p_session_id: session.refresh_token,
+      });
+    }
     await supabase.auth.signOut();
     // Full reload so middleware re-evaluates with the cleared auth cookie.
     window.location.assign("/");
