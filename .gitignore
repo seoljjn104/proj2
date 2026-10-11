@@ -46,3 +46,8 @@ supabase/.branches
 
 # superpowers visual brainstorming (local mockups)
 /.superpowers/
+
+# local tooling / agent skill caches
+/.agents/
+/.opencode/
+skills-lock.json
