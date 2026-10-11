@@ -57,7 +57,7 @@ export default function MatchingHub() {
       <PageHeader
         eyebrow="Two-way exchange"
         title="Matching Hub"
-        subtitle="People where you can teach something they want and learn something they offer — a true swap."
+        subtitle="People who want to learn what you teach, and can teach what you want to learn."
         count={
           !loading && !error && matches.length > 0
             ? `${matches.length} match${matches.length === 1 ? "" : "es"}`
@@ -65,7 +65,7 @@ export default function MatchingHub() {
         }
         action={
           <Link href="/profile" className="btn-secondary">
-            Update my skills
+            Manage my skills
           </Link>
         }
       />
@@ -81,7 +81,7 @@ export default function MatchingHub() {
 
       {loading || authLoading ? (
         <div
-          className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3"
           aria-busy="true"
         >
           {Array.from({ length: 3 }).map((_, i) => (
@@ -94,7 +94,7 @@ export default function MatchingHub() {
             title="No direct matches yet"
             body={
               hasSkills
-                ? "Keep your OFFERED and WANTED skills sharp — new matches appear as soon as someone complements your grid."
+                ? "New matches appear here as soon as someone's skills line up with yours."
                 : "Add OFFERED and WANTED skills to your profile so we can pair you."
             }
             action={
@@ -105,7 +105,7 @@ export default function MatchingHub() {
           />
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {matches.map((m) => (
             <MatchCard key={m.partner_id} match={m} onPropose={setProposing} />
           ))}

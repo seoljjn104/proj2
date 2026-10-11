@@ -214,7 +214,7 @@ export default function ProfileForm() {
       <div className="flex items-center gap-3">
         <button
           type="submit"
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
           disabled={status === "saving" || loading}
           aria-busy={status === "saving"}
         >

@@ -104,13 +104,13 @@ export default function MarketplaceFeed() {
       <PageHeader
         eyebrow="Skill exchange"
         title="Marketplace"
-        subtitle="Who fits your grid — members whose skills complement yours."
+        subtitle="Members whose skills complement yours."
         action={
           <button
             type="button"
             onClick={() => setOnlyDirect((v) => !v)}
             aria-pressed={onlyDirect}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+            className={`inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors sm:w-auto ${
               onlyDirect
                 ? "border-amber-300 bg-amber-50 text-amber-800"
                 : "border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:bg-slate-50"
@@ -131,12 +131,12 @@ export default function MarketplaceFeed() {
       />
 
       <form
-        className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]"
+        className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)] sm:p-5"
         onSubmit={(e) => e.preventDefault()}
         role="search"
         aria-label="Filter marketplace"
       >
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="relative w-full sm:w-72">
             <svg
               aria-hidden
@@ -168,7 +168,7 @@ export default function MarketplaceFeed() {
             />
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             <label
               htmlFor="filter-offered"
               className="mb-1 block text-xs font-medium text-slate-500"
@@ -178,14 +178,14 @@ export default function MarketplaceFeed() {
             <input
               id="filter-offered"
               type="text"
-              className="input w-40"
+              className="input w-full sm:w-40"
               placeholder="e.g. Guitar"
               value={filters.offered}
               onChange={(e) => update("offered", e.target.value)}
             />
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             <label
               htmlFor="filter-wanted"
               className="mb-1 block text-xs font-medium text-slate-500"
@@ -195,14 +195,14 @@ export default function MarketplaceFeed() {
             <input
               id="filter-wanted"
               type="text"
-              className="input w-40"
+              className="input w-full sm:w-40"
               placeholder="e.g. Spanish"
               value={filters.wanted}
               onChange={(e) => update("wanted", e.target.value)}
             />
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             <label
               htmlFor="filter-format"
               className="mb-1 block text-xs font-medium text-slate-500"
@@ -211,7 +211,7 @@ export default function MarketplaceFeed() {
             </label>
             <select
               id="filter-format"
-              className="input w-36"
+              className="input w-full sm:w-36"
               value={filters.format}
               onChange={(e) =>
                 update("format", e.target.value as Filters["format"])
@@ -225,7 +225,11 @@ export default function MarketplaceFeed() {
           </div>
 
           {hasFilters && (
-            <button type="button" className="btn-secondary" onClick={clearFilters}>
+            <button
+              type="button"
+              className="btn-secondary w-full sm:w-auto"
+              onClick={clearFilters}
+            >
               Clear filters
             </button>
           )}
@@ -247,11 +251,11 @@ export default function MarketplaceFeed() {
 
       {loading ? (
         <div
-          className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3"
           aria-busy="true"
         >
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="skeleton h-56" />
+            <div key={i} className="skeleton h-64" />
           ))}
         </div>
       ) : visible.length === 0 ? (
@@ -260,12 +264,12 @@ export default function MarketplaceFeed() {
             title={
               hasFilters
                 ? "No profiles match these filters"
-                : "No profiles yet — be the first to add your skills"
+                : "No profiles yet"
             }
             body={
               hasFilters
                 ? "Try removing a filter or searching for a different skill."
-                : "Head to your profile to list OFFERED and WANTED skills so the grid can pair you."
+                : "Add OFFERED and WANTED skills to your profile so the grid can pair you."
             }
             action={
               hasFilters ? (
@@ -277,7 +281,7 @@ export default function MarketplaceFeed() {
           />
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
           {visible.map((p) => (
             <ProfileCard
               key={p.profile_id}

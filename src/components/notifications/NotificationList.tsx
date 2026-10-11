@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
-import type { Notification } from "@/types/database";
+import type { Notification, NotificationKind } from "@/types/database";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -19,6 +19,75 @@ function relativeTime(iso: string): string {
   if (hours < 24) return `${hours} h ago`;
   const days = Math.round(hours / 24);
   return days === 1 ? "yesterday" : `${days} days ago`;
+}
+
+/** Icon colour carries the meaning of the event, using the locked palette. */
+const KIND_STYLE: Record<NotificationKind, string> = {
+  SESSION_PROPOSED: "bg-amber-50 text-amber-700",
+  SESSION_ACCEPTED: "bg-emerald-50 text-emerald-700",
+  SESSION_DECLINED: "bg-red-50 text-red-600",
+  SESSION_CANCELLED: "bg-slate-100 text-slate-500",
+  SESSION_COMPLETED: "bg-teal-50 text-teal-700",
+  REVIEW_RECEIVED: "bg-amber-50 text-amber-600",
+};
+
+function KindIcon({ kind }: { kind: NotificationKind }) {
+  const paths: Record<NotificationKind, ReactNode> = {
+    SESSION_PROPOSED: (
+      <path
+        d="M8 2.5a3.5 3.5 0 00-3.5 3.5v3l-1 1.5h9l-1-1.5V6A3.5 3.5 0 008 2.5zM6 12.5a2 2 0 004 0"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+    SESSION_ACCEPTED: (
+      <path
+        d="M3.5 8.5l3 3 6-7"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+    SESSION_DECLINED: (
+      <path
+        d="M4.5 4.5l7 7M11.5 4.5l-7 7"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    ),
+    SESSION_CANCELLED: (
+      <path
+        d="M4 8h8"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    ),
+    SESSION_COMPLETED: (
+      <path
+        d="M2.5 8.5l3 3 8-8"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    ),
+    REVIEW_RECEIVED: (
+      <path
+        d="M8 2.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6L8 10.7l-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z"
+        fill="currentColor"
+      />
+    ),
+  };
+  return (
+    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none" aria-hidden="true">
+      {paths[kind]}
+    </svg>
+  );
 }
 
 /**
@@ -120,18 +189,89 @@ export default function NotificationList() {
     );
   }
 
-  const unread = items.filter((n) => !n.read_at).length;
+  const unreadItems = items.filter((n) => !n.read_at);
+  const readItems = items.filter((n) => n.read_at);
+
+  function renderRow(n: Notification) {
+    const unreadNow = !n.read_at;
+    const row = (
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden
+          className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${KIND_STYLE[n.kind]}`}
+        >
+          <KindIcon kind={n.kind} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p
+            className={`text-sm ${
+              unreadNow
+                ? "font-semibold text-slate-900"
+                : "font-medium text-slate-600"
+            }`}
+          >
+            {n.title}
+          </p>
+          {n.body && (
+            <p
+              className={`mt-0.5 text-sm ${unreadNow ? "text-slate-700" : "text-slate-600"}`}
+            >
+              {n.body}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-slate-400">
+            {relativeTime(n.created_at)}
+          </p>
+        </div>
+        {n.session_id && (
+          <svg
+            aria-hidden
+            className="mt-2 h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-0.5"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <path
+              d="M6 4l4 4-4 4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </div>
+    );
+    return (
+      <li
+        key={n.id}
+        className={`card group transition-colors ${
+          unreadNow ? "border-l-[3px] border-l-teal-500" : ""
+        } ${n.session_id ? "hover:bg-slate-50" : ""}`}
+      >
+        {n.session_id ? (
+          <Link
+            href={`/sessions/${n.session_id}`}
+            className="block"
+            onClick={() => void markRead(n.id)}
+          >
+            {row}
+          </Link>
+        ) : (
+          <div>{row}</div>
+        )}
+      </li>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {unread > 0 && (
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      {unreadItems.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="flex items-center gap-2 text-sm text-slate-500">
-            <span
-              aria-hidden
-              className="h-2 w-2 rounded-full bg-teal-500"
-            />
-            <span className="font-semibold text-slate-700">{unread}</span>
+            <span aria-hidden className="h-2 w-2 rounded-full bg-teal-500" />
+            <span className="font-semibold text-slate-700">
+              {unreadItems.length}
+            </span>
             unread
           </p>
           <button
@@ -145,79 +285,19 @@ export default function NotificationList() {
         </div>
       )}
 
-      <ul className="space-y-3">
-        {items.map((n) => {
-          const unreadNow = !n.read_at;
-          const body = (
-            <div className="flex items-start gap-3">
-              <span
-                aria-hidden
-                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-                  unreadNow
-                    ? "bg-teal-50 text-teal-700"
-                    : "bg-slate-100 text-slate-400"
-                }`}
-              >
-                <svg viewBox="0 0 16 16" className="h-4 w-4" fill="none">
-                  <path
-                    d="M8 2.5a3.5 3.5 0 00-3.5 3.5v3l-1 1.5h9l-1-1.5V6A3.5 3.5 0 008 2.5zM6 12.5a2 2 0 004 0"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p
-                    className={`text-sm ${
-                      unreadNow
-                        ? "font-semibold text-slate-900"
-                        : "font-medium text-slate-600"
-                    }`}
-                  >
-                    {n.title}
-                  </p>
-                  {unreadNow && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-                      New
-                    </span>
-                  )}
-                </div>
-                {n.body && (
-                  <p className={`mt-0.5 text-sm ${unreadNow ? "text-slate-700" : "text-slate-600"}`}>
-                    {n.body}
-                  </p>
-                )}
-                <p className="mt-1 text-xs text-slate-400">
-                  {relativeTime(n.created_at)}
-                </p>
-              </div>
-            </div>
-          );
-          return (
-            <li
-              key={n.id}
-              className={`card relative overflow-hidden ${
-                unreadNow ? "border-l-[3px] border-l-teal-500" : ""
-              }`}
-            >
-              {n.session_id ? (
-                <Link
-                  href={`/sessions/${n.session_id}`}
-                  className="block"
-                  onClick={() => void markRead(n.id)}
-                >
-                  {body}
-                </Link>
-              ) : (
-                <div>{body}</div>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+      {unreadItems.length > 0 && (
+        <section>
+          <h2 className="section-title mb-3">Unread</h2>
+          <ul className="space-y-3">{unreadItems.map(renderRow)}</ul>
+        </section>
+      )}
+
+      {readItems.length > 0 && (
+        <section>
+          <h2 className="section-title mb-3">Earlier</h2>
+          <ul className="space-y-3">{readItems.map(renderRow)}</ul>
+        </section>
+      )}
     </div>
   );
 }

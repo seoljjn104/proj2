@@ -94,8 +94,24 @@ textarea:focus-visible,
   .chip-wanted {
     @apply inline-flex items-center rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-700 ring-1 ring-inset ring-sky-200;
   }
+  .chip-teal {
+    @apply inline-flex items-center rounded-full bg-teal-50 px-2.5 py-0.5 text-xs font-medium text-teal-700 ring-1 ring-inset ring-teal-200;
+  }
   .badge-direct {
     @apply inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-300;
+  }
+
+  /* Tinted inset "well" used inside cards (skill lists, exchange rows).
+     Borderless on purpose so it reads as a region of the card, never a
+     second card. */
+  .panel {
+    @apply rounded-xl bg-slate-50 p-3.5;
+  }
+
+  /* Real section heading for list surfaces. Replaces the uppercase
+     micro-label that had been standing in for an <h2>. */
+  .section-title {
+    @apply text-base font-semibold tracking-tight text-slate-900;
   }
 
   /* Soft branded backdrop for full-screen (error/not-found) pages. */

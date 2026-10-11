@@ -21,30 +21,28 @@ export default function PageHeader({
   action,
 }: Props) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+    <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 animate-fade-up">
       <div className="max-w-2xl">
-        {eyebrow && (
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-700">
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="mt-1.5 text-balance text-2xl font-semibold tracking-tight text-slate-900">
+        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
+        <h1 className="mt-2 text-balance text-2xl font-semibold tracking-tight text-slate-900 sm:text-[1.75rem]">
           {title}
         </h1>
         {subtitle && (
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-500">
+          <p className="mt-2 text-sm leading-relaxed text-slate-500">
             {subtitle}
           </p>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-3">
-        {count && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tabular-nums text-slate-600">
-            {count}
-          </span>
-        )}
-        {action}
-      </div>
+      {(count || action) && (
+        <div className="flex w-full shrink-0 items-center gap-3 sm:w-auto">
+          {count && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold tabular-nums text-slate-600">
+              {count}
+            </span>
+          )}
+          {action}
+        </div>
+      )}
     </div>
   );
 }

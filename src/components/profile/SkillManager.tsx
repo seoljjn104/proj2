@@ -152,9 +152,9 @@ export default function SkillManager() {
     }, {});
 
     return (
-      <div className="card">
-        <div className="flex items-center justify-between">
-          <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+      <div className="panel">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
             <span
               aria-hidden
               className={`h-1.5 w-1.5 rounded-full ${
@@ -163,14 +163,8 @@ export default function SkillManager() {
             />
             {type === "OFFERED" ? "I can teach" : "I want to learn"}
           </h3>
-          <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
-              type === "OFFERED"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-sky-50 text-sky-700"
-            }`}
-          >
-            {type === "OFFERED" ? "OFFERED" : "WANTED"} · {items.length}
+          <span className="text-xs font-medium tabular-nums text-slate-500">
+            {items.length} {items.length === 1 ? "skill" : "skills"}
           </span>
         </div>
 
@@ -204,7 +198,7 @@ export default function SkillManager() {
         </div>
 
         <form
-          className="mt-4 flex gap-2"
+          className="mt-4 flex flex-col gap-2 sm:flex-row"
           onSubmit={(e) => {
             e.preventDefault();
             if (pick) void addTag(Number(pick), type);
@@ -246,11 +240,13 @@ export default function SkillManager() {
         {list("WANTED", wanted, pickWanted, setPickWanted)}
       </div>
 
-      <form onSubmit={createAndAdd} className="card space-y-3">
-        <h3 className="font-semibold text-slate-900">Create a new skill tag</h3>
-        <div className="flex flex-wrap gap-2">
+      <form onSubmit={createAndAdd} className="panel space-y-3">
+        <h3 className="text-sm font-semibold text-slate-900">
+          Create a new skill tag
+        </h3>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <input
-            className="input min-w-40 flex-1"
+            className="input flex-1 sm:min-w-40"
             placeholder="e.g. Kotlin, Watercolour, Public Speaking"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
@@ -259,7 +255,7 @@ export default function SkillManager() {
             aria-label="New skill name"
           />
           <input
-            className="input min-w-32 flex-1"
+            className="input flex-1 sm:min-w-32"
             placeholder="Category (optional)"
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
@@ -267,7 +263,7 @@ export default function SkillManager() {
             aria-label="New skill category (optional)"
           />
           <select
-            className="input w-auto"
+            className="input sm:w-auto"
             value={newType}
             onChange={(e) => setNewType(e.target.value as SkillType)}
             aria-label="Skill list"

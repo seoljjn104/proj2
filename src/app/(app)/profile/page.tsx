@@ -19,7 +19,7 @@ export default function ProfilePage() {
         <div className="space-y-6 lg:col-span-2">
           <section className="card">
             <div className="mb-5 border-b border-slate-100 pb-4">
-              <h2 className="font-semibold text-slate-900">Profile details</h2>
+              <h2 className="section-title">Profile details</h2>
               <p className="mt-1 text-sm text-slate-500">
                 Name, bio and preferences shown on your Marketplace card.
               </p>
@@ -28,8 +28,21 @@ export default function ProfilePage() {
           </section>
 
           <section className="card">
-            <div className="mb-4">
-              <h2 className="font-semibold text-slate-900">Blocked members</h2>
+            <div className="mb-5 border-b border-slate-100 pb-4">
+              <h2 className="section-title">My skills</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Fill both lists so reciprocal matches can line up with someone
+                else&apos;s.
+              </p>
+            </div>
+            <SkillManager />
+          </section>
+        </div>
+
+        <aside className="space-y-6 lg:col-span-1">
+          <section className="card">
+            <div className="mb-5 border-b border-slate-100 pb-4">
+              <h2 className="section-title">Blocked members</h2>
               <p className="mt-1 text-sm text-slate-500">
                 People you&apos;ve blocked won&apos;t appear in your Marketplace
                 or Matches.
@@ -37,17 +50,6 @@ export default function ProfilePage() {
             </div>
             <BlockedMembers />
           </section>
-        </div>
-
-        <aside className="lg:col-span-1">
-          <div className="mb-4">
-            <h2 className="font-semibold text-slate-900">My skills</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Keep both lists filled — reciprocal matches need OFFERED and
-              WANTED to align with someone else&apos;s.
-            </p>
-          </div>
-          <SkillManager />
         </aside>
       </div>
     </div>

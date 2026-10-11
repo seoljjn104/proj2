@@ -225,22 +225,28 @@ export default function SessionChat({ sessionId }: Props) {
         </Link>
         <div className="card mt-3">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-3">
                 <h1 className="text-xl font-semibold tracking-tight text-slate-900">
                   {partnerName}
                 </h1>
                 <SessionStatusBadge status={session.status} />
               </div>
-              <p className="mt-1 text-sm text-slate-600">
-                {isRequester ? "You proposed" : `${partnerName} proposed`} ·{" "}
-                {formatSlot(session.scheduled_at)} ·{" "}
+              <p className="mt-1.5 text-sm text-slate-600">
+                <span className="font-medium text-slate-700">
+                  {formatSlot(session.scheduled_at)}
+                </span>
+                <span aria-hidden className="mx-1.5 text-slate-300">
+                  ·
+                </span>
                 {session.duration_minutes} min
+                <span aria-hidden className="mx-1.5 text-slate-300">
+                  ·
+                </span>
+                {isRequester ? "you proposed" : "they proposed"}
               </p>
-              <p className="mt-0.5 text-xs text-slate-500">
-                You are the{" "}
-                <strong>{isRequester ? "requester" : "provider"}</strong> of this
-                1:1 exchange.
+              <p className="mt-1 text-xs text-slate-500">
+                You are the {isRequester ? "requester" : "provider"}.
               </p>
             </div>
             <SafetyMenu
@@ -250,7 +256,7 @@ export default function SessionChat({ sessionId }: Props) {
             />
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 border-t border-slate-100 pt-4">
             <SessionActions
               session={session}
               onUpdate={setSession}
@@ -263,9 +269,7 @@ export default function SessionChat({ sessionId }: Props) {
       {/* Embedded 1:1 video call (Jitsi Meet, in-app) */}
       {session.status === "ACCEPTED" && session.meeting_link && (
         <div className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
-            1:1 video with {partnerName}
-          </h2>
+          <h2 className="section-title">1:1 video with {partnerName}</h2>
           <MeetingRoom
             roomName={roomNameFromLink(session.meeting_link)}
             displayName={profile?.name || "SkillGRID member"}
@@ -275,11 +279,9 @@ export default function SessionChat({ sessionId }: Props) {
       )}
 
       {/* Chat */}
-      <div className="card flex h-[32rem] flex-col p-0">
+      <div className="card flex h-[65dvh] min-h-[24rem] flex-col p-0 sm:h-[34rem] lg:h-[38rem]">
         <div className="border-b border-slate-100 px-5 py-3">
-          <h2 className="text-sm font-semibold text-slate-700">
-            Session chat
-          </h2>
+          <h2 className="section-title">Session chat</h2>
         </div>
 
         <div
@@ -290,7 +292,7 @@ export default function SessionChat({ sessionId }: Props) {
         >
           {messages.length === 0 && (
             <p className="py-8 text-center text-sm text-slate-500">
-              No messages yet — say hi and confirm what you&apos;ll exchange.
+              No messages yet. Say hi and confirm what you&apos;ll exchange.
             </p>
           )}
           {messages.map((m) => {

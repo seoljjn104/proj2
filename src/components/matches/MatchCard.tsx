@@ -24,7 +24,7 @@ function ExchangeRow({
   } as const;
   return (
     <div className="min-w-0">
-      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold capitalize text-slate-500">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />
         {label}
       </p>
@@ -53,17 +53,15 @@ export default function MatchCard({ match, onPropose }: Props) {
   const gain = match.skills_you_gain ?? [];
 
   return (
-    <div className="card card-interactive relative flex flex-col gap-4 overflow-hidden">
-      <div aria-hidden className="absolute inset-x-0 top-0 h-1 bg-teal-500/80" />
-
+    <div className="card card-interactive relative flex flex-col gap-4 overflow-hidden border-amber-200 hover:border-amber-300">
       <div className="flex items-center gap-3">
         <Avatar name={match.partner_name} size="lg" />
         <div className="min-w-0 flex-1">
           <h2 className="truncate font-semibold text-slate-900">
             {match.partner_name ?? "Unnamed user"}
           </h2>
-          <p className="truncate text-xs font-medium text-slate-500">
-            Add them to your grid
+          <p className="mt-0.5 line-clamp-2 text-sm font-medium text-slate-600">
+            {match.partner_bio || "Open to a mutual swap."}
           </p>
         </div>
         <span className="badge-direct shrink-0">
@@ -81,7 +79,7 @@ export default function MatchCard({ match, onPropose }: Props) {
         </span>
       </div>
 
-      <div className="space-y-2.5 rounded-xl bg-slate-50 p-3.5">
+      <div className="panel space-y-2.5">
         <ExchangeRow label="You teach them" tone="offered" skills={teach} />
         <div aria-hidden className="flex items-center gap-2">
           <span className="h-px flex-1 bg-slate-200" />

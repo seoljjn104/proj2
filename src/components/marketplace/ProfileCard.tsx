@@ -29,7 +29,7 @@ function SkillRow({
   } as const;
   return (
     <div>
-      <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dots[tone]}`} />
         {label}
       </p>
@@ -50,14 +50,11 @@ function SkillRow({
 
 export default function ProfileCard({ profile, onPropose }: Props) {
   return (
-    <div className="card card-interactive relative flex flex-col gap-4 overflow-hidden">
-      {profile.is_direct_match && (
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300"
-        />
-      )}
-
+    <div
+      className={`card card-interactive relative flex flex-col gap-4 overflow-hidden ${
+        profile.is_direct_match ? "border-amber-200 hover:border-amber-300" : ""
+      }`}
+    >
       <div className="flex items-center gap-3">
         <Avatar name={profile.name} size="lg" />
         <div className="min-w-0 flex-1">
@@ -91,7 +88,7 @@ export default function ProfileCard({ profile, onPropose }: Props) {
         {profile.bio || "No bio yet."}
       </p>
 
-      <div className="space-y-3 rounded-xl bg-slate-50 p-3.5">
+      <div className="panel space-y-3">
         <SkillRow label="Teaches" tone="offered" skills={profile.offered} />
         <SkillRow label="Wants to learn" tone="wanted" skills={profile.wanted} />
       </div>
@@ -104,7 +101,7 @@ export default function ProfileCard({ profile, onPropose }: Props) {
         <button
           type="button"
           onClick={() => onPropose(profile)}
-          className="btn-primary"
+          className="btn-primary w-full sm:w-auto"
         >
           Propose a session
         </button>
