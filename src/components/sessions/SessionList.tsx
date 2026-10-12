@@ -165,11 +165,22 @@ export default function SessionList() {
   buckets.incoming.sort(byNewest);
   buckets.outgoing.sort(byNewest);
   buckets.upcoming.sort(bySlot);
-  buckets.history.sort(byNewest);
 
-  const completedCount = buckets.history.filter(
+  // History is really two stories: calls you finished and calls that never
+  // happened. Keep them apart so a declined proposal doesn't sit between
+  // two completed sessions.
+  const completed = buckets.history.filter(
     ({ session }) => session.status === "COMPLETED",
-  ).length;
+  );
+  const closed = buckets.history.filter(
+    ({ session }) => session.status !== "COMPLETED",
+  );
+  completed.sort((a, b) =>
+    (b.session.completed_at ?? "").localeCompare(
+      a.session.completed_at ?? "",
+    ),
+  );
+  closed.sort(byNewest);
 
   function section(
     title: string,
@@ -296,7 +307,7 @@ export default function SessionList() {
       <StatsStrip
         incoming={buckets.incoming.length}
         upcoming={buckets.upcoming.length}
-        completed={completedCount}
+        completed={completed.length}
       />
 
       {section(
@@ -307,7 +318,8 @@ export default function SessionList() {
       )}
       {section("Proposals you sent", buckets.outgoing, "bg-sky-500")}
       {section("Upcoming", buckets.upcoming, "bg-teal-500")}
-      {section("History", buckets.history, "bg-slate-400")}
+      {section("Completed", completed, "bg-slate-400")}
+      {section("Closed", closed, "bg-slate-400")}
     </div>
   );
 }

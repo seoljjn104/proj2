@@ -98,13 +98,19 @@ export default function ProfileCard({ profile, onPropose }: Props) {
           <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-teal-500" />
           {FORMAT_LABEL[profile.session_format]}
         </p>
-        <button
-          type="button"
-          onClick={() => onPropose(profile)}
-          className="btn-primary w-full sm:w-auto"
-        >
-          Propose a session
-        </button>
+        {profile.offered.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => onPropose(profile)}
+            className="btn-primary w-full sm:w-auto"
+          >
+            Propose a session
+          </button>
+        ) : (
+          <span className="w-full text-center text-xs text-slate-400 sm:w-auto sm:text-right">
+            Nothing to trade yet
+          </span>
+        )}
       </div>
     </div>
   );

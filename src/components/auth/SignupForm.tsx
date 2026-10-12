@@ -154,7 +154,7 @@ export default function SignupForm({ onSwitch, onClose }: Props) {
         <button
           type="button"
           onClick={onSwitch}
-          className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+          className="-my-1.5 py-1.5 font-semibold text-teal-700 hover:text-teal-800 hover:underline"
         >
           Sign in
         </button>

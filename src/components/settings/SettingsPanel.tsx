@@ -61,8 +61,20 @@ export default function SettingsPanel() {
                   <span className="block text-xs text-ink2">{mode.hint}</span>
                 </span>
                 {on && (
-                  <span className="rounded-full bg-teal-700 px-2 py-0.5 text-[11px] font-bold text-onbrand">
-                    On
+                  <span
+                    aria-hidden
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-700"
+                  >
+                    <svg viewBox="0 0 12 12" className="h-3.5 w-3.5 text-onbrand">
+                      <path
+                        d="M2 6.5l2.5 2.5L10 3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
                   </span>
                 )}
               </button>

@@ -7,6 +7,14 @@ Read `README.md` for setup, architecture, RLS model, and the session lifecycle.
 `SESSION.md` is a local dev log (gitignored) — update it after a work session,
 never commit it.
 
+## Skills & plugins
+
+Before every task — anything asked, anything started — check the installed
+skills and plugins first. If one fits the work, load it and follow it. Skills
+are reference cards, not code: nothing runs on its own, and the agent decides
+whether to use one — but the check happens every time, never skipped, never
+winged from memory.
+
 ## Commands
 
 | Command | Purpose |

@@ -6,6 +6,7 @@ import {
   bucketFor,
   canCancel,
   canComplete,
+  canJoin,
   canRespond,
   isTerminal,
   statusLabel,
@@ -70,4 +71,12 @@ test("statusLabel gives user-facing copy", () => {
   assert.equal(statusLabel("DECLINED"), "Declined");
   assert.equal(statusLabel("COMPLETED"), "Completed");
   assert.equal(statusLabel("CANCELLED"), "Cancelled");
+});
+
+test("only an accepted session can be joined", () => {
+  assert.equal(canJoin("ACCEPTED"), true);
+  assert.equal(canJoin("PENDING"), false);
+  assert.equal(canJoin("DECLINED"), false);
+  assert.equal(canJoin("COMPLETED"), false);
+  assert.equal(canJoin("CANCELLED"), false);
 });

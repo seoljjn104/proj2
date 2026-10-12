@@ -22,7 +22,7 @@ export default function Error({
         We couldn&apos;t load this page
       </h1>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-slate-600">
-        A temporary problem stopped this page from loading. Try again — if it
+        A temporary problem stopped this page from loading. Try again, and if it
         keeps happening, come back in a bit.
       </p>
       <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

@@ -26,36 +26,26 @@ export default function TopBar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-line surface-blur">
-      {/* Mobile */}
-      <div className="flex items-center gap-2 px-3 py-2.5 min-[360px]:px-4 lg:hidden">
+      {/* One shell for both breakpoints. The controls render once, so the
+          notifications bell doesn't mount twice and fire duplicate queries. */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5 min-[360px]:px-4 lg:grid-cols-[1fr_minmax(0,440px)_1fr] lg:gap-4 lg:px-6 lg:py-3">
         <Link
           href="/home"
           aria-label="SkillGRID home"
-          className="display flex min-w-0 items-center gap-2 text-lg text-ink"
+          className="display flex h-11 min-w-0 items-center gap-2 text-lg text-ink lg:hidden"
         >
           <BrandMark />
           <span className="truncate">
             Skill<span className="text-teal-700">GRID</span>
           </span>
         </Link>
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            href="/marketplace"
-            aria-label="Search skills"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink2 transition-colors hover:text-ink"
-          >
-            <SearchIcon className="h-[18px] w-[18px]" aria-hidden="true" />
-          </Link>
-          <NotificationsMenu />
-          <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink2 transition-colors hover:border-slate-300 hover:text-ink" />
-          <AccountMenu compact placement="bottom" align="right" />
-        </div>
-      </div>
+        <span aria-hidden="true" className="hidden lg:block" />
 
-      {/* Desktop: centred search */}
-      <div className="hidden items-center px-6 py-3 lg:grid lg:grid-cols-[1fr_minmax(0,440px)_1fr] lg:gap-4">
-        <span aria-hidden="true" />
-        <form role="search" onSubmit={onSubmit} className="w-full">
+        <form
+          role="search"
+          onSubmit={onSubmit}
+          className="hidden w-full lg:block"
+        >
           <label htmlFor="global-search" className="sr-only">
             Search skills, people, sessions
           </label>
@@ -74,7 +64,15 @@ export default function TopBar() {
             />
           </div>
         </form>
+
         <div className="flex items-center justify-end gap-2">
+          <Link
+            href="/marketplace"
+            aria-label="Search skills"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink2 transition-colors hover:text-ink lg:hidden"
+          >
+            <SearchIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+          </Link>
           <NotificationsMenu />
           <ThemeToggle className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-surface text-ink2 transition-colors hover:border-slate-300 hover:text-ink" />
           <AccountMenu compact placement="bottom" align="right" />

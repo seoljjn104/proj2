@@ -98,7 +98,12 @@ export default function AdminFlagTable() {
         </div>
       )}
 
-      <div className="card overflow-x-auto p-0">
+      <div
+        className="card overflow-x-auto p-0"
+        role="region"
+        aria-label="Members and their moderation status"
+        tabIndex={0}
+      >
         <table className="w-full min-w-[44rem] text-left text-sm">
           <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
             <tr>
@@ -131,20 +136,26 @@ export default function AdminFlagTable() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span
-                    className="text-amber-500"
-                    aria-label={`${Number(r.avg_rating).toFixed(1)} out of 5 stars`}
-                  >
-                    <span aria-hidden="true">
-                      {"★".repeat(Math.round(r.avg_rating))}
-                    </span>
-                    <span aria-hidden="true" className="text-slate-300">
-                      {"★".repeat(5 - Math.round(r.avg_rating))}
-                    </span>
-                  </span>{" "}
-                  <span className="text-xs text-slate-500">
-                    {Number(r.avg_rating).toFixed(1)}
-                  </span>
+                  {r.review_count > 0 ? (
+                    <>
+                      <span
+                        className="text-amber-500"
+                        aria-label={`${Number(r.avg_rating).toFixed(1)} out of 5 stars`}
+                      >
+                        <span aria-hidden="true">
+                          {"★".repeat(Math.round(r.avg_rating))}
+                        </span>
+                        <span aria-hidden="true" className="text-slate-400">
+                          {"★".repeat(5 - Math.round(r.avg_rating))}
+                        </span>
+                      </span>{" "}
+                      <span className="text-xs text-slate-500">
+                        {Number(r.avg_rating).toFixed(1)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-500">No reviews yet</span>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{r.review_count}</td>
                 <td className="px-4 py-3">
@@ -216,6 +227,9 @@ export default function AdminFlagTable() {
           </tbody>
         </table>
       </div>
+      <p className="mt-2 text-xs text-slate-500 sm:hidden">
+        Scroll the table sideways to see every column.
+      </p>
     </div>
   );
 }

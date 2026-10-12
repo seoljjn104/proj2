@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { useSessionRoom } from "./useSessionRoom";
 import Avatar from "@/components/ui/Avatar";
+import { canJoin, statusLabel } from "@/lib/session";
+import type { SessionStatus } from "@/types/database";
 import {
   ArrowLeftIcon,
   MicIcon,
@@ -13,6 +15,29 @@ import {
   VideoIcon,
   VideoOffIcon,
 } from "@/components/layout/icons";
+
+/** Why a session with no room to join says what it says. */
+const CLOSED_COPY: Record<
+  Exclude<SessionStatus, "ACCEPTED">,
+  { title: string; body: string }
+> = {
+  PENDING: {
+    title: "Not accepted yet",
+    body: "This proposal is still waiting for an answer, so there's no call to join.",
+  },
+  DECLINED: {
+    title: "This session was declined",
+    body: "The proposal wasn't accepted, so there's no call to join.",
+  },
+  CANCELLED: {
+    title: "This session was cancelled",
+    body: "The call was called off before it started, so there's nothing to join.",
+  },
+  COMPLETED: {
+    title: "This session has finished",
+    body: "The call is over, so there's nothing to join.",
+  },
+};
 
 function slotText(iso: string | null): string {
   if (!iso) return "No time chosen yet";
@@ -32,6 +57,7 @@ export default function PreCall({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const { profile } = useAuth();
   const { session, partner, loading, missing } = useSessionRoom(sessionId);
+  const callable = session ? canJoin(session.status) : false;
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -108,11 +134,11 @@ export default function PreCall({ sessionId }: { sessionId: string }) {
   );
 
   useEffect(() => {
-    if (loading || missing || !session) return;
+    if (loading || missing || !session || !callable) return;
     void startPreview();
     return () => stopPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, missing, session?.id]);
+  }, [loading, missing, session?.id, callable]);
 
   useEffect(() => {
     const stream = streamRef.current;
@@ -147,7 +173,22 @@ export default function PreCall({ sessionId }: { sessionId: string }) {
   }
 
   const partnerName = partner?.name ?? "your partner";
-  const callable = session.status === "ACCEPTED";
+
+  if (!callable) {
+    const copy = CLOSED_COPY[session.status as Exclude<SessionStatus, "ACCEPTED">];
+    return (
+      <div className="mx-auto max-w-lg px-6 py-20 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9c937f]">
+          {statusLabel(session.status)} · {slotText(session.scheduled_at)}
+        </p>
+        <h1 className="display mt-3 text-[28px] text-[#EDE7DB]">{copy.title}</h1>
+        <p className="mt-2 text-sm text-[#9c937f]">{copy.body}</p>
+        <Link href={`/sessions/${sessionId}`} className="btn-secondary mt-6 inline-flex">
+          Back to session
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex min-h-[100dvh] max-w-5xl flex-col px-4 py-6 sm:px-6">
@@ -191,7 +232,7 @@ export default function PreCall({ sessionId }: { sessionId: string }) {
                 We can&apos;t reach your camera or microphone
               </p>
               <p className="text-xs text-[#9c937f]">
-                Check your browser permissions. You can still join — you&apos;ll
+                Check your browser permissions. You can still join; you&apos;ll
                 simply be muted until you allow access.
               </p>
             </div>
@@ -300,13 +341,7 @@ export default function PreCall({ sessionId }: { sessionId: string }) {
         <button type="button" className="btn-secondary" onClick={() => join(false)}>
           Join with camera off
         </button>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => join(true)}
-          disabled={!callable}
-          title={callable ? undefined : "This session isn't ready to join yet"}
-        >
+        <button type="button" className="btn-primary" onClick={() => join(true)}>
           Join now
         </button>
       </div>

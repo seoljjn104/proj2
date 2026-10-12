@@ -106,7 +106,7 @@ export default function LoginForm({ next, onSwitch }: Props) {
         <button
           type="button"
           onClick={onSwitch}
-          className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+          className="-my-1.5 py-1.5 font-semibold text-teal-700 hover:text-teal-800 hover:underline"
         >
           Create your account
         </button>
@@ -208,7 +208,7 @@ function ResetForm({
         <button
           type="button"
           onClick={onBack}
-          className="font-semibold text-teal-700 hover:text-teal-800 hover:underline"
+          className="-my-1.5 py-1.5 font-semibold text-teal-700 hover:text-teal-800 hover:underline"
         >
           Back to sign in
         </button>

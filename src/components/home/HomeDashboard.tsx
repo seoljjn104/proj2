@@ -209,9 +209,12 @@ export default function HomeDashboard() {
 
       if (!feedRes.error) {
         const feed = (feedRes.data as MarketplaceProfile[]) ?? [];
-        const wantedKeys = new Set(myWanted.map(skillKey));
+        // Demand = members who want something *you* teach, which is what the
+        // nudge claims. (Counting their offers would answer a different
+        // question than the sentence asks.)
+        const offeredKeys = new Set(myOffered.map(skillKey));
         const count = feed.filter((p) =>
-          p.offered.some((s) => wantedKeys.has(skillKey(s))),
+          p.wanted.some((s) => offeredKeys.has(skillKey(s))),
         ).length;
         setDemand(count);
       }
@@ -401,7 +404,9 @@ export default function HomeDashboard() {
         <p className="mt-3 max-w-2xl text-[15px] text-ink2">
           {incoming.length > 0
             ? `${incoming.length} proposal${incoming.length === 1 ? "" : "s"} waiting on you`
-            : "Nothing needs you right now"}
+            : freshMatches.length > 0
+              ? `${freshMatches.length} new match${freshMatches.length === 1 ? "" : "es"} to look at`
+              : "Nothing needs you right now"}
           {nextSession?.session.scheduled_at
             ? `, and your next session is ${slotParts(nextSession.session.scheduled_at).full}.`
             : "."}
@@ -546,8 +551,11 @@ export default function HomeDashboard() {
         )}
       </section>
 
-      {/* Demand nudge */}
-      {demand !== null && offered.length > 0 && demand > 0 && (
+      {/* Demand nudge — only when there is no match card already saying it */}
+      {demand !== null &&
+        offered.length > 0 &&
+        demand > 0 &&
+        freshMatches.length === 0 && (
         <section className="flex flex-wrap items-center gap-4 rounded-xl border border-teal-200 bg-gradient-to-br from-teal-50 to-paper p-5">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-100 text-teal-700">
             <TrendIcon className="h-5 w-5" />

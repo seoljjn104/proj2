@@ -10,7 +10,7 @@ export default function AdminPage() {
   return (
     <PageShell>
       <PageHeader
-        title="Moderation"
+        title="Admin"
         subtitle="Review reports and flag accounts that abuse the platform. Flagged members are hidden from the marketplace and matching engine."
       />
 

@@ -12,7 +12,7 @@ const FAQ = [
   },
   {
     q: "What is a direct match?",
-    a: "A direct match is someone who wants to learn something you teach and can teach something you want to learn — a two-way fit. These carry the amber mark and sit at the top of your marketplace.",
+    a: "A direct match is someone who wants to learn something you teach and can teach something you want to learn. That two-way fit carries the amber mark and sits at the top of your marketplace.",
   },
   {
     q: "Where do I edit my skills?",
@@ -58,7 +58,7 @@ export default function HelpPage() {
           <Link href="/marketplace" className="font-semibold text-teal-700">
             marketplace
           </Link>{" "}
-          and propose a session — members are happy to help.
+          and propose a session. Members are happy to help.
         </p>
       </div>
     </PageShell>

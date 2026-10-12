@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { friendlyDbError } from "@/lib/errors";
 import { useAuth } from "@/hooks/useAuth";
-import type { Message, ProfileDirectory, Session } from "@/types/database";
+import type { Message, ProfileDirectory, Session, SessionStatus } from "@/types/database";
+import { statusLabel } from "@/lib/session";
 import SessionChat from "@/components/chat/SessionChat";
 import Avatar from "@/components/ui/Avatar";
 import Alert from "@/components/ui/Alert";
@@ -20,6 +21,22 @@ interface Thread {
   fromMe: boolean;
   at: string;
   needsYou: boolean;
+  /** Which exchange this thread belongs to, so two threads with the same
+   * person don't read as the same row. */
+  skill: string | null;
+  status: SessionStatus;
+  scheduledAt: string | null;
+}
+
+function contextLine(t: Thread): string {
+  const skill = t.skill ?? "Skill exchange";
+  const when = t.scheduledAt
+    ? new Date(t.scheduledAt).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : null;
+  return [skill, when, statusLabel(t.status)].filter(Boolean).join(" · ");
 }
 
 function relTime(iso: string): string {
@@ -77,15 +94,33 @@ export default function MessagesWorkspace() {
 
     const { data: sessRows } = await supabase
       .from("sessions")
-      .select("id, requester_id, provider_id")
+      .select(
+        "id, requester_id, provider_id, status, scheduled_at, teach_tag_id, learn_tag_id",
+      )
       .in("id", sessionIds);
     const sessions = (sessRows as Session[]) ?? [];
+    const sessionById = new Map<string, Session>();
     const partnerBySession = new Map<string, string>();
     const partnerIds = new Set<string>();
+    const tagIds = new Set<number>();
     for (const s of sessions) {
       const partnerId = s.requester_id === user.id ? s.provider_id : s.requester_id;
+      sessionById.set(s.id, s);
       partnerBySession.set(s.id, partnerId);
       partnerIds.add(partnerId);
+      if (typeof s.teach_tag_id === "number") tagIds.add(s.teach_tag_id);
+      if (typeof s.learn_tag_id === "number") tagIds.add(s.learn_tag_id);
+    }
+
+    const skillNames = new Map<number, string>();
+    if (tagIds.size > 0) {
+      const { data: tagRows } = await supabase
+        .from("skill_tags")
+        .select("id, name")
+        .in("id", [...tagIds]);
+      for (const row of (tagRows as { id: number; name: string }[] | null) ?? []) {
+        skillNames.set(Number(row.id), row.name);
+      }
     }
 
     const people: Record<string, { name: string; avatar: string | null }> = {};
@@ -105,6 +140,7 @@ export default function MessagesWorkspace() {
       sessionIds
         .map((id) => {
           const m = latest.get(id)!;
+          const s = sessionById.get(id);
           const partnerId = partnerBySession.get(id) ?? "";
           const fromMe = m.sender_id === user.id;
           return {
@@ -116,6 +152,11 @@ export default function MessagesWorkspace() {
             fromMe,
             at: m.created_at,
             needsYou: !fromMe,
+            skill: s?.teach_tag_id
+              ? (skillNames.get(Number(s.teach_tag_id)) ?? null)
+              : null,
+            status: s?.status ?? "PENDING",
+            scheduledAt: s?.scheduled_at ?? null,
           };
         })
         .filter((t) => t.partnerId),
@@ -202,6 +243,9 @@ export default function MessagesWorkspace() {
                         <span className="ml-auto shrink-0 text-[11px] text-ink3">
                           {relTime(t.at)}
                         </span>
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12px] font-medium text-ink3">
+                        {contextLine(t)}
                       </span>
                       <span className="mt-0.5 block truncate text-[13px] text-ink2">
                         {t.fromMe && <span className="text-ink3">You: </span>}

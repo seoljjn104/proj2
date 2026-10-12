@@ -159,7 +159,7 @@ export default function ProposeSessionModal({ provider, onClose }: Props) {
           <h2 className="text-lg font-semibold">Propose a 1:1 session</h2>
           <p className="mt-1 text-sm text-slate-600">
             With <strong>{provider.name ?? "this user"}</strong>. They can accept
-            or decline — you&apos;ll get an update either way.
+            or decline. You&apos;ll get an update either way.
           </p>
 
           <form onSubmit={onSubmit} className="mt-5 space-y-4">

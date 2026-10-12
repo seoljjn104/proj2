@@ -71,10 +71,6 @@ function StepIcon({ step }: { step: number }) {
 function MatchPreview() {
   return (
     <div className="animate-fade-up relative motion-safe:[animation-delay:140ms]">
-      <div
-        aria-hidden
-        className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-teal-100/80 via-slate-50 to-amber-100/70 blur-sm"
-      />
       <div className="card relative p-6 shadow-[var(--shadow-lift)]">
         <div className="flex items-center justify-between">
           <span className="badge-direct">
@@ -90,7 +86,7 @@ function MatchPreview() {
             </svg>
             Direct match
           </span>
-          <span className="text-xs font-medium text-slate-500">teach ↔ learn</span>
+          <span className="text-xs font-medium text-ink3">Example match</span>
         </div>
 
         <div className="mt-5 flex items-center gap-3">
@@ -122,7 +118,7 @@ function MatchPreview() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-lg bg-slate-50 px-3 py-2.5 text-center text-sm font-medium text-slate-700">
+        <div className="mt-5 border-t border-line pt-3 text-center text-[13px] text-ink2">
           Propose a 1:1 session
         </div>
       </div>
@@ -207,12 +203,12 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
             <p className="eyebrow motion-safe:animate-fade-up">
               Peer-to-peer skill exchange
             </p>
-            <h1 className="mt-4 text-balance text-4xl font-semibold leading-[1.04] tracking-tight text-slate-900 motion-safe:animate-fade-up sm:text-6xl">
+            <h1 className="display mt-4 text-balance text-[2.25rem] text-ink motion-safe:animate-fade-up sm:text-[3.5rem]">
               Teach what you know.{" "}
               <span className="text-teal-700">Learn what you need.</span>
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600 motion-safe:animate-fade-up">
-              SkillGRID pairs two people who want to trade knowledge directly —
+            <p className="mt-5 max-w-xl text-lg leading-relaxed text-ink2 motion-safe:animate-fade-up">
+              SkillGRID pairs two people who want to trade knowledge directly:
               one teacher, one learner, one session at a time.
             </p>
 
@@ -233,17 +229,26 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
                   Sign in
                 </button>
               </div>
-              <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
+              <ul className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink3">
                 <li className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-teal-600" aria-hidden />
+                  <span
+                    aria-hidden
+                    className="h-[7px] w-[7px] rounded-[2px] bg-teal-700"
+                  />
                   No credits
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
+                  <span
+                    aria-hidden
+                    className="h-[7px] w-[7px] rounded-[2px] bg-teal-700"
+                  />
                   Direct 1:1 sessions
                 </li>
                 <li className="flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                  <span
+                    aria-hidden
+                    className="h-[7px] w-[7px] rounded-[2px] bg-teal-700"
+                  />
                   Live video + chat
                 </li>
               </ul>
@@ -255,43 +260,32 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
 
         {/* How it works */}
         <section className="mt-24 sm:mt-28" aria-labelledby="how-heading">
-          <div className="max-w-2xl">
-            <p className="eyebrow">How it works</p>
-            <h2
-              id="how-heading"
-              className="mt-3 text-balance text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl"
-            >
-              Set your grid, find your counterpart, swap live.
-            </h2>
-          </div>
+          <h2
+            id="how-heading"
+            className="display max-w-2xl text-balance text-[1.75rem] text-ink sm:text-[2.25rem]"
+          >
+            Set your grid, find your counterpart, swap live.
+          </h2>
 
           <ol className="mt-10 grid gap-6 sm:grid-cols-3">
-            {STEPS.map((s, i) => {
-              const amber = i === 1;
-              return (
-                <li
-                  key={s.title}
-                  className={`card card-interactive relative p-6 ${amber ? "border-amber-200" : ""}`}
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="card card-interactive relative p-6">
+                <span
+                  aria-hidden
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-white shadow-sm"
                 >
-                  <span
-                    aria-hidden
-                    className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-sm ${
-                      amber ? "bg-amber-500" : "bg-teal-700"
-                    }`}
-                  >
-                    <StepIcon step={i + 1} />
-                  </span>
-                  <span
-                    aria-hidden
-                    className="absolute right-5 top-6 text-sm font-bold tabular-nums text-slate-300"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <h3 className="mt-4 font-semibold text-slate-900">{s.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{s.body}</p>
-                </li>
-              );
-            })}
+                  <StepIcon step={i + 1} />
+                </span>
+                <span
+                  aria-hidden
+                  className="display absolute right-5 top-5 text-lg text-ink3"
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-4 font-semibold text-ink">{s.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink2">{s.body}</p>
+              </li>
+            ))}
           </ol>
         </section>
 
@@ -299,29 +293,29 @@ export default function LandingContent({ initialAuth = null, next }: Props) {
         <section className="brand-panel relative mt-24 overflow-hidden rounded-3xl px-6 py-14 sm:px-12 sm:py-16">
           <div aria-hidden className="brand-panel-grid pointer-events-none absolute inset-0" />
           <div className="relative mx-auto max-w-3xl text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-teal-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-onink">
               One teacher, one learner, one session
             </p>
-            <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h2 className="display mt-4 text-balance text-[1.75rem] text-onink sm:text-[2.25rem]">
               Knowledge is better when it moves in both directions.
             </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300">
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-onink-2">
               Put your grid on the board. SkillGRID finds the person whose wants
               match your offers and gets you face to face.
             </p>
-            <p className="mt-6 inline-flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-300">
+            <p className="mt-6 inline-flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-onink-3">
               No credits
-              <span aria-hidden className="h-1 w-1 rounded-full bg-teal-400" />
+              <span aria-hidden className="h-1 w-1 rounded-full bg-brand-onink" />
               Direct 1:1
-              <span aria-hidden className="h-1 w-1 rounded-full bg-amber-400" />
+              <span aria-hidden className="h-1 w-1 rounded-full bg-brand-onink" />
               Live sessions
             </p>
           </div>
         </section>
       </main>
 
-      <footer className="relative mx-auto w-full max-w-6xl px-6 pb-10 pt-4 text-center text-xs text-slate-500">
-        SkillGRID — direct 1:1 skill exchange. No credits, no crowds.
+      <footer className="relative mx-auto w-full max-w-6xl px-6 pb-10 pt-4 text-center text-xs text-ink3">
+        SkillGRID · direct 1:1 skill exchange. No credits, no crowds.
       </footer>
 
       {mode && (

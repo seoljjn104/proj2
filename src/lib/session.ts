@@ -56,6 +56,15 @@ export function canComplete(status: SessionStatus, actor: Actor): boolean {
 }
 
 /**
+ * A session is joinable only while it is ACCEPTED. Pending, declined,
+ * cancelled and completed sessions have no room to join, so the pre-call
+ * screen must not offer a way in.
+ */
+export function canJoin(status: SessionStatus): boolean {
+  return status === "ACCEPTED";
+}
+
+/**
  * Bucket a session for the current actor:
  * - incoming: pending proposals awaiting the provider
  * - outgoing: pending proposals awaiting the requester's partner

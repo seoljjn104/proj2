@@ -186,9 +186,9 @@ export default function SkillManager() {
                 <button
                   type="button"
                   onClick={() => void removeSkill(m.id)}
-                  className="ml-1.5 font-bold opacity-60 hover:opacity-100"
-                  aria-label={`Remove ${m.skill_tags?.name ?? ""}`}
                   disabled={busy}
+                  aria-label={`Remove ${m.skill_tags?.name ?? ""}`}
+                  className="ml-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-base font-semibold leading-none text-ink2 opacity-70 transition-colors hover:bg-line hover:opacity-100 disabled:opacity-40"
                 >
                   ×
                 </button>

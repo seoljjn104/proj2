@@ -115,6 +115,14 @@
   --font-display:
     var(--font-fraunces), "Fraunces", Georgia, "Times New Roman", serif;
 
+  /* Pinned ink for surfaces that are dark in *both* modes (the brand panel,
+     the room). These never flip, so text on a pinned dark surface stays
+     readable when the theme changes. Never use the slate/teal scales there. */
+  --color-onink: #f3ede1;
+  --color-onink-2: #b9af9d;
+  --color-onink-3: #928874;
+  --color-brand-onink: #5cc8b6;
+
   /* Semantic surfaces — prefer these in new work. */
   --color-paper: var(--gg-paper);
   --color-surface: var(--gg-surface);
