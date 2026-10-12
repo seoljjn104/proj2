@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { SessionTodos } from "./useSessionTodos";
 import { MAX_TODO_LEN } from "./useSessionTodos";
 import { useSessionMessages } from "@/components/chat/useSessionMessages";
+import { useSessionRoom } from "./useSessionRoom";
 import Alert from "@/components/ui/Alert";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -226,6 +227,8 @@ function ChatTab({ sessionId }: { sessionId: string }) {
     useSessionMessages(sessionId);
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const { user } = useAuth();
+  const { partner } = useSessionRoom(sessionId);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "auto" });
@@ -237,6 +240,8 @@ function ChatTab({ sessionId }: { sessionId: string }) {
     const ok = await send(text);
     if (ok) setText("");
   }
+
+  const partnerName = partner?.name ?? "Them";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -252,19 +257,48 @@ function ChatTab({ sessionId }: { sessionId: string }) {
             No messages yet. Say hi and confirm what you&apos;ll exchange.
           </p>
         )}
-        {messages.map((m) => (
-          <div key={m.id} className="text-sm">
-            <p className="text-[11px] text-[#8b8371]">
-              {new Date(m.created_at).toLocaleTimeString(undefined, {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-            <p className="mt-0.5 break-words rounded-xl bg-white/8 px-3 py-2 text-[#EDE7DB]">
-              {m.content}
-            </p>
-          </div>
-        ))}
+        {messages.map((m) => {
+          const mine = m.sender_id === user?.id;
+          return (
+            <div
+              key={m.id}
+              className={`flex ${mine ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                  mine
+                    ? "bg-teal-700 text-onbrand"
+                    : "bg-white/8 text-[#EDE7DB]"
+                }`}
+              >
+                {!mine && (
+                  <p className="mb-1 text-[11px] font-semibold text-[#cbc2ad]">
+                    {partnerName}
+                  </p>
+                )}
+                <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                <p
+                  className={`mt-1 flex items-center justify-end gap-1.5 text-[11px] ${
+                    mine ? "text-teal-50" : "text-[#8b8371]"
+                  }`}
+                >
+                  <span>
+                    {new Date(m.created_at).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  {mine && (
+                    <span>
+                      {m.read_at ? "· Read" : "· Sent"}
+                    </span>
+                  )}
+                  {!mine && m.read_at && <span>· Read</span>}
+                </p>
+              </div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 

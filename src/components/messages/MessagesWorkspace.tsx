@@ -151,7 +151,7 @@ export default function MessagesWorkspace() {
             preview: m.content,
             fromMe,
             at: m.created_at,
-            needsYou: !fromMe,
+            needsYou: !fromMe && m.read_at == null,
             skill: s?.teach_tag_id
               ? (skillNames.get(Number(s.teach_tag_id)) ?? null)
               : null,

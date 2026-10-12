@@ -81,6 +81,28 @@ export function useSessionMessages(sessionId: string): SessionMessages {
     };
   }, [supabase, user, authLoading, sessionId]);
 
+  // Mark messages as read when received/viewed
+  useEffect(() => {
+    if (!user || messages.length === 0) return;
+    const unread = messages.filter(
+      (m) => m.sender_id !== user.id && m.read_at == null,
+    );
+    if (unread.length === 0) return;
+    const now = new Date().toISOString();
+    const ids = unread.map((m) => m.id);
+    void supabase
+      .from("messages")
+      .update({ read_at: now })
+      .in("id", ids)
+      .then(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            ids.includes(m.id) ? { ...m, read_at: now } : m,
+          ),
+        );
+      });
+  }, [messages, user, supabase]);
+
   const send = useCallback(
     async (content: string) => {
       const trimmed = content.trim();

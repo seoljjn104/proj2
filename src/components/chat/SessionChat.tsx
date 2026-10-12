@@ -192,6 +192,7 @@ export default function SessionChat({ sessionId }: Props) {
           )}
           {messages.map((m) => {
             const mine = m.sender_id === user.id;
+            const partnerName = partner?.name ?? "Them";
             return (
               <div
                 key={m.id}
@@ -204,16 +205,29 @@ export default function SessionChat({ sessionId }: Props) {
                       : "bg-slate-100 text-slate-800"
                   }`}
                 >
+                  {!mine && (
+                    <p className="mb-1 text-[11px] font-semibold text-slate-700">
+                      {partnerName}
+                    </p>
+                  )}
                   <p className="whitespace-pre-wrap break-words">{m.content}</p>
                   <p
-                    className={`mt-1 text-[11px] ${
+                    className={`mt-1 flex items-center justify-end gap-1.5 text-[11px] ${
                       mine ? "text-teal-50" : "text-slate-600"
                     }`}
                   >
-                    {new Date(m.created_at).toLocaleTimeString(undefined, {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <span>
+                      {new Date(m.created_at).toLocaleTimeString(undefined, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                    {mine && (
+                      <span>
+                        {m.read_at ? "· Read" : "· Sent"}
+                      </span>
+                    )}
+                    {!mine && m.read_at && <span>· Read</span>}
                   </p>
                 </div>
               </div>

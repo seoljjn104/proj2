@@ -6,6 +6,7 @@ import Avatar from "@/components/ui/Avatar";
 interface Props {
   profile: MarketplaceProfile;
   onPropose: (profile: MarketplaceProfile) => void;
+  onClick?: () => void;
 }
 
 const FORMAT_LABEL: Record<MarketplaceProfile["session_format"], string> = {
@@ -48,12 +49,16 @@ function SkillRow({
   );
 }
 
-export default function ProfileCard({ profile, onPropose }: Props) {
+export default function ProfileCard({ profile, onPropose, onClick }: Props) {
   return (
     <div
-      className={`card card-interactive relative flex flex-col gap-4 overflow-hidden ${
+      className={`card card-interactive relative flex flex-col gap-4 overflow-hidden cursor-pointer ${
         profile.is_direct_match ? "border-amber-200 hover:border-amber-300" : ""
       }`}
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); }} : undefined}
     >
       <div className="flex items-center gap-3">
         <Avatar name={profile.name} src={profile.avatar_url} size="lg" />

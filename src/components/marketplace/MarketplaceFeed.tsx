@@ -11,6 +11,7 @@ import PageShell from "@/components/layout/PageShell";
 import PageHeader from "@/components/ui/PageHeader";
 import Alert from "@/components/ui/Alert";
 import EmptyState from "@/components/ui/EmptyState";
+import Avatar from "@/components/ui/Avatar";
 
 interface Filters {
   search: string;
@@ -25,6 +26,111 @@ const EMPTY_FILTERS: Filters = {
   wanted: "",
   format: "",
 };
+
+/** Right-rail detail panel for a marketplace profile. */
+function ProfileDetailPanel({
+  profile,
+  onClose,
+}: {
+  profile: MarketplaceProfile | null;
+  onClose: () => void;
+}) {
+  if (!profile) return null;
+
+  const FORMAT_LABEL: Record<SessionFormat, string> = {
+    ONLINE: "Online",
+    IN_PERSON: "In person",
+    EITHER: "Online or in person",
+  };
+
+  return (
+    <div className="flex flex-col gap-5 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <h2 className="section-title">Profile details</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          aria-label="Close details"
+        >
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+            <path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Avatar name={profile.name} src={profile.avatar_url} size="lg" />
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold text-slate-900 truncate">{profile.name ?? "Unnamed user"}</h3>
+          {profile.headline && (
+            <p className="mt-0.5 line-clamp-1 text-sm font-medium text-slate-600 truncate">{profile.headline}</p>
+          )}
+          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+            {FORMAT_LABEL[profile.session_format]}
+          </p>
+        </div>
+      </div>
+
+      {profile.bio && (
+        <div className="rounded-xl border border-line bg-surface p-4">
+          <p className="text-sm leading-relaxed text-slate-700">{profile.bio}</p>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Teaches
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.offered.length === 0 ? (
+              <span className="text-xs text-slate-400">Nothing listed</span>
+            ) : (
+              profile.offered.map((s) => (
+                <span key={s} className="chip-offered">{s}</span>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-slate-500">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+            Wants to learn
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.wanted.length === 0 ? (
+              <span className="text-xs text-slate-400">Nothing listed</span>
+            ) : (
+              profile.wanted.map((s) => (
+                <span key={s} className="chip-wanted">{s}</span>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-auto pt-4 border-t border-line">
+        <p className="mb-3 text-sm text-slate-600">
+          <span className="font-medium text-amber-700">⚡ Viewing their grid</span> &mdash; You&apos;re seeing
+          {profile.name ?? "this person"}&apos;s skills.
+        </p>
+        {profile.offered.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {}}
+            className="btn-primary w-full"
+          >
+            Propose a session
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Marketplace Feed — renders public profile cards from the
@@ -42,6 +148,7 @@ export default function MarketplaceFeed() {
   const [error, setError] = useState<string | null>(null);
   const [onlyDirect, setOnlyDirect] = useState(false);
   const [proposing, setProposing] = useState<MarketplaceProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<MarketplaceProfile | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(
@@ -108,7 +215,7 @@ export default function MarketplaceFeed() {
     onlyDirect;
 
   return (
-    <PageShell>
+    <PageShell rail={selectedProfile ? <ProfileDetailPanel profile={selectedProfile} onClose={() => setSelectedProfile(null)} /> : undefined}>
       <PageHeader
         eyebrow="Skill exchange"
         title="Marketplace"
@@ -295,6 +402,7 @@ export default function MarketplaceFeed() {
               key={p.profile_id}
               profile={p}
               onPropose={setProposing}
+              onClick={() => setSelectedProfile(p)}
             />
           ))}
         </div>
